@@ -41,7 +41,7 @@ class Lexer(input: String) {
         try {
             result.toDouble()
         } catch (exp : Exception){
-            throw Exception("Could not convert '${result}${iterator.next()}' into a number!")
+            throw Exception("Could not convert '${result}${iterator!!.next()}' into a number!")
         }
         return Token.NUMBER_LIT(result.toDouble())
     }
@@ -68,7 +68,7 @@ class Lexer(input: String) {
         while (iterator.hasNext()) {
             val c = iterator.peek()
             if (!c.isWhitespace()) break
-            iterator.next()
+            iterator!!.next()
         }
     }
 
