@@ -1,13 +1,13 @@
-class Lexer{
+class Lexer(input: String) {
 
     val equation = mutableListOf<Token>()
-    val inputString: String
-    private var iterator : PIterator<Char>
+    val inputString: String = input
+    private var iterator : PIterator<Char> = PIterator(input.iterator())
     private var lookahead: Token? = null
+    private val isDecimalPoint = {c: Char -> c == '.'}
+    private val pElement  = { equation[equation.lastIndex - 1] }
 
-    constructor(input : String){
-        inputString = input
-        iterator = PIterator(input.iterator())
+    init {
         while (peek() != Token.EOF){
             equation.add(next())
             fixEquation()
@@ -15,38 +15,50 @@ class Lexer{
     }
 
     private fun fixEquation(){
-        if (equation.size > 1){
-            when (equation.last()){
-                // 1. Adding multiplication
-                is Token.VARIABLE_LIT -> {
-                    when (equation[equation.lastIndex-1]){
-                        is Token.NUMBER_LIT, Token.RPAREN -> {
-                            insertMultiplicationToken()
+        if(equation.size < 2) return
+        when (equation.last()){
+            // Adding multiplication signs / determining binded variables
+            is Token.VARIABLE_LIT -> {
+                when (pElement()){
+                    is Token.NUMBER_LIT -> {
+                        equation.add(Token.BINDED_VAR_LIT((pElement() as Token.NUMBER_LIT).n,
+                            (equation.last() as Token.VARIABLE_LIT).c))
+                        repeat(2){
+                            equation.removeAt(equation.lastIndex-1)
                         }
                     }
+                    is Token.RPAREN -> {
+                        insertMultiplicationToken()
+                    }
                 }
-                is Token.LPAREN -> {
-                    when (equation[equation.lastIndex - 1]) {
-                        is Token.VARIABLE_LIT -> {
-                            insertMultiplicationToken()
+            }
+            is Token.NUMBER_LIT -> {
+                when (pElement()) {
+                    is Token.VARIABLE_LIT -> {
+                        equation.add(Token.BINDED_VAR_LIT((equation.last() as Token.NUMBER_LIT).n,
+                            (pElement() as Token.VARIABLE_LIT).c))
+                        repeat(2) {
+                            equation.removeAt(equation.lastIndex - 1)
                         }
-                        is Token.NUMBER_LIT -> {
-                            insertMultiplicationToken()
+                    }
+                    is Token.BINDED_VAR_LIT -> {
+                        equation.add(Token.BINDED_VAR_LIT((pElement() as Token.BINDED_VAR_LIT).n * (equation.last() as Token.NUMBER_LIT).n,
+                            (pElement() as Token.BINDED_VAR_LIT).c))
+                        repeat(2) {
+                            equation.removeAt(equation.lastIndex - 1)
                         }
                     }
                 }
             }
-        }
-    }
-
-    private fun ErrorHandlingOnEquation(){
-        if (equation.size > 1){
-            when (equation.last()){
-                !is Token.NUMBER_LIT -> {
-                    throwOperationNotDefinedException()
+            is Token.LPAREN -> {
+                when (pElement()) {
+                    is Token.VARIABLE_LIT -> {
+                        insertMultiplicationToken()
+                    }
+                    is Token.NUMBER_LIT -> {
+                        insertMultiplicationToken()
+                    }
                 }
-                !is Token.VARIABLE_LIT -> throwOperationNotDefinedException()
-                !is Token.LPAREN -> throwOperationNotDefinedException()
             }
         }
     }
@@ -57,18 +69,13 @@ class Lexer{
         equation.add(lastToken)
     }
 
-    private fun throwOperationNotDefinedException() {
-        throw Exception("Operation " + equation[equation.lastIndex - 1].toString() + " " + equation.last().toString() +
-                " is not defined!")
-    }
-
     private fun next() : Token {
         lookahead?.let { lookahead = null; return it }
         consumeWhitespace()
-        if (!iterator!!.hasNext()) {
+        if (!iterator.hasNext()) {
             return Token.EOF
         }
-        return when (val c = iterator!!.next()) {
+        return when (val c = iterator.next()) {
             '(' -> Token.LPAREN
             ')' -> Token.RPAREN
             '+' -> Token.ADDITION
@@ -95,21 +102,21 @@ class Lexer{
 
     private fun number(c: Char): Token {
         var result = c.toString()
-        while (iterator!!.hasNext() && (iterator!!.peek().isDigit() || isDecimalPoint(iterator!!.peek()))) {
-            result += iterator!!.next()
+        while (iterator.hasNext() && (iterator.peek().isDigit() || isDecimalPoint(iterator.peek()))) {
+            result += iterator.next()
         }
         try {
             result.toDouble()
         } catch (exp : Exception){
-            throw Exception("Could not convert '${result}${iterator!!.next()}' into a number!")
+            throw Exception("Could not convert '${result}${iterator.next()}' into a number!")
         }
         return Token.NUMBER_LIT(result.toDouble())
     }
 
     private fun ident(c: Char): Token {
         var result = c.toString()
-        while (iterator!!.hasNext() && iterator!!.peek().isJavaIdentifierPart()) {
-            result += iterator!!.next()
+        while (iterator.hasNext() && iterator.peek().isLetter()) {
+            result += iterator.next()
         }
         return when (result) {
             "sin" -> Token.SIN
@@ -119,18 +126,16 @@ class Lexer{
             "log" -> Token.LOG
             else -> when(result.length) {
                 1 -> Token.VARIABLE_LIT(result.single())
-                else -> throw Exception("Unknown function '${result}'")
+                else -> throw Exception("Unknown Expression '${result}'")
             }
         }
     }
 
     private fun consumeWhitespace() {
-        while (iterator!!.hasNext()) {
-            val c = iterator!!.peek()
+        while (iterator.hasNext()) {
+            val c = iterator.peek()
             if (!c.isWhitespace()) break
-            iterator!!.next()
+            iterator.next()
         }
     }
-
-    private val isDecimalPoint = {c: Char -> c == '.'}
 }

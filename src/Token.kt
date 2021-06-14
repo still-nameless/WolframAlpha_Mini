@@ -1,3 +1,4 @@
+
 sealed class Token {
 
     override fun toString(): String {
@@ -25,6 +26,7 @@ sealed class Token {
     // Literals
     data class VARIABLE_LIT(val c : Char) : Token()
     data class NUMBER_LIT(val n : Double) : Token()
+    data class BINDED_VAR_LIT(val n : Double, val c: Char) : Token()
 
     // Control Token
     object EOF : Token()
