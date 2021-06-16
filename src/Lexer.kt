@@ -1,8 +1,7 @@
 class Lexer(input: String) {
 
     val equation = mutableListOf<Token>()
-    val inputString: String = input
-    private var iterator : PIterator<Char> = PIterator(input.iterator())
+    var iterator : PIterator<Char> = PIterator(input.iterator())
     private var lookahead: Token? = null
     private val isDecimalPoint = {c: Char -> c == '.'}
     private val pElement  = { equation[equation.lastIndex - 1] }
@@ -40,7 +39,7 @@ class Lexer(input: String) {
 
     private fun insertMultiplicationToken() {
         val lastToken = equation.last()
-        equation[equation.lastIndex] = Token.MULTIPLICATION
+        equation[equation.lastIndex] = Token.Operators.MULTIPLICATION
         equation.add(lastToken)
     }
 
@@ -48,17 +47,17 @@ class Lexer(input: String) {
         lookahead?.let { lookahead = null; return it }
         consumeWhitespace()
         if (!iterator.hasNext()) {
-            return Token.EOF
+            return Token.ControlTokens.EOF
         }
         return when (val c = iterator.next()) {
-            '(' -> Token.LPAREN
-            ')' -> Token.RPAREN
-            '+' -> Token.ADDITION
-            '-' -> Token.SUBTRACTION
-            '*' -> Token.MULTIPLICATION
-            '/' -> Token.DIVISION
-            '=' -> Token.EQUALS
-            ',',';' -> Token.SPLITTER
+            '(' -> Token.Symbols.LPAREN
+            ')' -> Token.Symbols.RPAREN
+            '+' -> Token.Operators.ADDITION
+            '-' -> Token.Operators.SUBTRACTION
+            '*' -> Token.Operators.MULTIPLICATION
+            '/' -> Token.Operators.DIVISION
+            '=' -> Token.Symbols.EQUALS
+            ',',';' -> Token.ControlTokens.SPLITTER
 
             else -> when {
                 c.isJavaIdentifierStart() -> ident(c)

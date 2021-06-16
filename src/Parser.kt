@@ -1,4 +1,5 @@
-class Parser() {
+class Parser(val tokens : Lexer) {
+
 
     /*
         is Token.Literals.NUMBER_LIT -> {
