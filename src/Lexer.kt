@@ -8,7 +8,7 @@ class Lexer(input: String) {
     private val pElement  = { equation[equation.lastIndex - 1] }
 
     init {
-        while (peek() != Token.EOF){
+        while (peek() != Token.ControlTokens.EOF){
             equation.add(next())
             fixEquation()
         }
@@ -17,47 +17,22 @@ class Lexer(input: String) {
     private fun fixEquation(){
         if(equation.size < 2) return
         when (equation.last()){
-            // Adding multiplication signs / determining binded variables
-            is Token.VARIABLE_LIT -> {
+            // Adding multiplication signs
+            is Token.Literals.VARIABLE_LIT -> {
                 when (pElement()){
-                    is Token.NUMBER_LIT -> {
-                        equation.add(Token.BINDED_VAR_LIT((pElement() as Token.NUMBER_LIT).n,
-                            (equation.last() as Token.VARIABLE_LIT).c))
-                        repeat(2){
-                            equation.removeAt(equation.lastIndex-1)
-                        }
-                    }
-                    is Token.RPAREN -> {
-                        insertMultiplicationToken()
-                    }
+                    is Token.Symbols.RPAREN -> insertMultiplicationToken()
+                    is Token.Literals.NUMBER_LIT -> insertMultiplicationToken()
                 }
             }
-            is Token.NUMBER_LIT -> {
+            is Token.Symbols.LPAREN -> {
                 when (pElement()) {
-                    is Token.VARIABLE_LIT -> {
-                        equation.add(Token.BINDED_VAR_LIT((equation.last() as Token.NUMBER_LIT).n,
-                            (pElement() as Token.VARIABLE_LIT).c))
-                        repeat(2) {
-                            equation.removeAt(equation.lastIndex - 1)
-                        }
-                    }
-                    is Token.BINDED_VAR_LIT -> {
-                        equation.add(Token.BINDED_VAR_LIT((pElement() as Token.BINDED_VAR_LIT).n * (equation.last() as Token.NUMBER_LIT).n,
-                            (pElement() as Token.BINDED_VAR_LIT).c))
-                        repeat(2) {
-                            equation.removeAt(equation.lastIndex - 1)
-                        }
-                    }
+                    is Token.Literals.VARIABLE_LIT -> insertMultiplicationToken()
+                    is Token.Literals.NUMBER_LIT -> insertMultiplicationToken()
                 }
             }
-            is Token.LPAREN -> {
+            is Token.Literals.NUMBER_LIT -> {
                 when (pElement()) {
-                    is Token.VARIABLE_LIT -> {
-                        insertMultiplicationToken()
-                    }
-                    is Token.NUMBER_LIT -> {
-                        insertMultiplicationToken()
-                    }
+                    is Token.Literals.VARIABLE_LIT -> insertMultiplicationToken()
                 }
             }
         }
@@ -110,7 +85,7 @@ class Lexer(input: String) {
         } catch (exp : Exception){
             throw Exception("Could not convert '${result}${iterator.next()}' into a number!")
         }
-        return Token.NUMBER_LIT(result.toDouble())
+        return Token.Literals.NUMBER_LIT(result.toDouble())
     }
 
     private fun ident(c: Char): Token {
@@ -119,13 +94,13 @@ class Lexer(input: String) {
             result += iterator.next()
         }
         return when (result) {
-            "sin" -> Token.SIN
-            "cos" -> Token.COS
-            "tan" -> Token.TAN
-            "sqrt" -> Token.SQRT
-            "log" -> Token.LOG
+            "sin" -> Token.Functions.SIN
+            "cos" -> Token.Functions.COS
+            "tan" -> Token.Functions.TAN
+            "sqrt" -> Token.Functions.SQRT
+            "log" -> Token.Functions.LOG
             else -> when(result.length) {
-                1 -> Token.VARIABLE_LIT(result.single())
+                1 -> Token.Literals.VARIABLE_LIT(result.single())
                 else -> throw Exception("Unknown Expression '${result}'")
             }
         }
