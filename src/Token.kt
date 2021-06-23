@@ -35,7 +35,6 @@ sealed class Token {
     object Literals : Token() {
         data class VARIABLE_LIT(val c : Char) : Token()
         data class NUMBER_LIT(val n : Double) : Token()
-        data class BINDED_VAR_LIT(val n : Double, val c: Char) : Token()
     }
 
     // Control Token

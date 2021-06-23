@@ -1,6 +1,13 @@
 fun main(){
-    val input : String = "sin(2) + 7x * c8 - (2)b + e(7)= 4" // <=> 7x = -2
-    val list = Lexer(input).equation
-    val evalList = Evaluator(list)
-    list.forEach{println(it)}
+    val input : String = ".453"
+    testParser(input)
 }
+
+fun testParser(input : String){
+    println("Parsing: $input")
+    val lexer = Lexer(input)
+    val parser = Parser(lexer)
+    println(parser.parseExpr())
+}
+
+// (7x + 3) + 5x

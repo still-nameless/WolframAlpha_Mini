@@ -1,49 +1,10 @@
 class Lexer(input: String) {
 
-    val equation = mutableListOf<Token>()
     var iterator : PIterator<Char> = PIterator(input.iterator())
     private var lookahead: Token? = null
     private val isDecimalPoint = {c: Char -> c == '.'}
-    private val pElement  = { equation[equation.lastIndex - 1] }
 
-    init {
-        while (peek() != Token.ControlTokens.EOF){
-            equation.add(next())
-            fixEquation()
-        }
-    }
-
-    private fun fixEquation(){
-        if(equation.size < 2) return
-        when (equation.last()){
-            // Adding multiplication signs
-            is Token.Literals.VARIABLE_LIT -> {
-                when (pElement()){
-                    is Token.Symbols.RPAREN -> insertMultiplicationToken()
-                    is Token.Literals.NUMBER_LIT -> insertMultiplicationToken()
-                }
-            }
-            is Token.Symbols.LPAREN -> {
-                when (pElement()) {
-                    is Token.Literals.VARIABLE_LIT -> insertMultiplicationToken()
-                    is Token.Literals.NUMBER_LIT -> insertMultiplicationToken()
-                }
-            }
-            is Token.Literals.NUMBER_LIT -> {
-                when (pElement()) {
-                    is Token.Literals.VARIABLE_LIT -> insertMultiplicationToken()
-                }
-            }
-        }
-    }
-
-    private fun insertMultiplicationToken() {
-        val lastToken = equation.last()
-        equation[equation.lastIndex] = Token.Operators.MULTIPLICATION
-        equation.add(lastToken)
-    }
-
-    private fun next() : Token {
+    fun next() : Token {
         lookahead?.let { lookahead = null; return it }
         consumeWhitespace()
         if (!iterator.hasNext()) {
@@ -67,7 +28,7 @@ class Lexer(input: String) {
         }
     }
 
-    private fun peek(): Token {
+    fun peek(): Token {
         val token = next()
         lookahead = token
         return token
