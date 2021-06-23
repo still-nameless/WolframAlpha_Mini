@@ -1,9 +1,11 @@
-class Parser(val tokens : Lexer) {
+import kotlin.math.exp
+
+class Parser(private val tokens : Lexer) {
 
     fun parseExpr() : Expr? {
-        return when (val t = tokens.next()){
+        return when (val t : Token = tokens.next()){
             is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t, tokens.next())
-            is Token.Functions -> parseFunctions(t)
+            is Token.Functions.SIN -> parseFunctions(t)
             is Token.ControlTokens.EOF -> null
             else -> throw Exception("Unexpected Token $t!")
         }
@@ -17,7 +19,19 @@ class Parser(val tokens : Lexer) {
         else -> throw Exception("Coding monkeys at work!")
     }
 
-    private fun parseFunctions(t : Token) : Expr = Expr.Function(t.toString(),Expr.Number(2.0))
+    //private fun parseFunctions(t : Token) : Expr = Expr.Function(t.toString(),Expr.Number(2.0))
+    private inline fun <reified A>parseFunctions(token : A) : Expr {
+        expectNext<Token.Symbols.LPAREN>()
+        var body : Expr? = null
+        while (tokens.peek() != Token.Symbols.RPAREN) {
+            body = parseExpr()
+        }
+        expectNext<Token.Symbols.RPAREN>()
+        if (body != null)
+            return Expr.Function(token.toString(), body)
+        else
+            throw Exception("Undefined Expression: $body")
+    }
 
     private fun parseVariables(t : Token.Literals.VARIABLE_LIT) : Expr = Expr.Variable(t.c)
 
@@ -33,7 +47,13 @@ class Parser(val tokens : Lexer) {
         }
     }
 
-    private inline fun <reified A>expectNext(): Boolean = tokens.peek() is A
+    private inline fun <reified A>expectNext(): A {
+        val next : Token = tokens.next()
+        if (next !is A) {
+            throw Exception("Unexpected token: $next")
+        }
+        return next
+    }
 
 
     /*

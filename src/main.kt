@@ -1,5 +1,5 @@
 fun main(){
-    val input : String = ".453"
+    val input : String = "sin(2)"
     testParser(input)
 
     testGaussianAlgorithm()
@@ -10,6 +10,7 @@ fun testParser(input : String){
     val lexer = Lexer(input)
     val parser = Parser(lexer)
     println(parser.parseExpr())
+    println(parser.parseExpr())
 }
 
 fun testGaussianAlgorithm(){
@@ -18,7 +19,8 @@ fun testGaussianAlgorithm(){
         arrayOf(-4.0,1.0)
     )
     val solutions : Array<Double> = arrayOf(2.0,-4.0)
-    val solutionVector : Array<Double> = EquationSolver().GaussianElimination(matrix, solutions)
+    val equationSolver = EquationSolver()
+    val solutionVector : Array<Double> = equationSolver.performGaussianElimination(matrix, solutions)
 
     solutionVector.forEach { println(it) }
 }

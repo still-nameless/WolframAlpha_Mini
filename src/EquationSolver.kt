@@ -4,7 +4,7 @@ import kotlin.math.abs
 class EquationSolver() {
     private val epsilon : Double = 1e-15
 
-    fun GaussianElimination(matrix : Array<Array<Double>>, solutions : Array<Double>) : Array<Double> {
+    fun performGaussianElimination(matrix : Array<Array<Double>>, solutions : Array<Double>) : Array<Double> {
         val n : Int = solutions.size
 
         for (i : Int in 0 until n){
