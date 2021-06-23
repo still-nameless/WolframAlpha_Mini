@@ -17,8 +17,6 @@ sealed class Token {
     // Symbols
     object Symbols : Token() {
         object RPAREN : Token()
-        object LPAREN_FUNC :Token()
-        object RPAREN_FUNC : Token()
         object LPAREN : Token()
         object EQUALS : Token()
     }

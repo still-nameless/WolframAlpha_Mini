@@ -1,11 +1,9 @@
-import kotlin.math.exp
-
 class Parser(private val tokens : Lexer) {
 
     fun parseExpr() : Expr? {
         return when (val t : Token = tokens.next()){
             is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t, tokens.next())
-            is Token.Functions.SIN -> parseFunctions(t)
+            is Token.Functions.SIN, Token.Functions.SQRT -> parseFunctions(t)
             is Token.ControlTokens.EOF -> null
             else -> throw Exception("Unexpected Token $t!")
         }
