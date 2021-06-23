@@ -22,15 +22,17 @@ class Parser(private val tokens : Lexer) {
     //private fun parseFunctions(t : Token) : Expr = Expr.Function(t.toString(),Expr.Number(2.0))
     private inline fun <reified A>parseFunctions(token : A) : Expr {
         expectNext<Token.Symbols.LPAREN>()
-        var body : Expr? = null
-        while (tokens.peek() != Token.Symbols.RPAREN) {
-            body = parseExpr()
+        val body = mutableListOf<Expr>()
+        while (tokens.peek() != Token.Symbols.RPAREN) { // Rechte Klammer könnte Probleme werfen
+            val expr : Expr? = parseExpr()
+            // Crasht beim Aufruf von parseNumberVariables wegen des tokens.next()
+            if (expr != null)
+                body.add(expr)
+            else
+                break
         }
         expectNext<Token.Symbols.RPAREN>()
-        if (body != null)
-            return Expr.Function(token.toString(), body)
-        else
-            throw Exception("Undefined Expression: $body")
+        return Expr.Function(token.toString(), body)
     }
 
     private fun parseVariables(t : Token.Literals.VARIABLE_LIT) : Expr = Expr.Variable(t.c)
