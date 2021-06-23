@@ -19,23 +19,9 @@ class Parser(val tokens : Lexer) {
 
     private fun parseFunctions(t : Token) : Expr = Expr.Function(t.toString(),Expr.Number(2.0))
 
-
-    // 7x + 2y - 3z = 5
-    // 2x + 7y - z = 9
-    // 9x + y - 2z = 3
-
     private fun parseVariables(t : Token.Literals.VARIABLE_LIT) : Expr = Expr.Variable(t.c)
 
     private fun parseNumbers(t : Token.Literals.NUMBER_LIT) : Expr = Expr.Number(t.n)
-
-
-    private fun tryParseAtom() : Expr? {
-
-        return when (val t = tokens.peek()){
-
-            else -> null
-        }
-    }
 
     private fun parseOperator() : Operator? {
         return when (tokens.peek()){
