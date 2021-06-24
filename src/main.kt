@@ -1,5 +1,5 @@
 fun main(){
-    val input : String = "sin(2x)"
+    val input : String = "7x * 8y"
     testParser(input)
     //testGaussianAlgorithm()
 }

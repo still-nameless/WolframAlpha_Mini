@@ -1,11 +1,16 @@
 class Parser(private val tokens : Lexer) {
 
+    private var equation = Expr.Equation(mutableListOf())
+
     fun parseExpr() : Expr? {
-        return when (val t : Token = tokens.next()){
+        return when (val t : Token = tokens.next()) {
             is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t)
-            is Token.Functions.SIN, Token.Functions.SQRT -> parseFunctions(t)
-            is Token.Symbols.LPAREN -> parseBracketedExpression(t)
-            is Token.ControlTokens.EOF -> null
+            is Token.Functions.SIN, Token.Functions.COS, Token.Functions.TAN, Token.Functions.LOG,
+               Token.Functions.SQRT -> parseFunctions(t)
+            is Token.Operators.ADDITION, Token.Operators.SUBTRACTION, Token.Operators.MULTIPLICATION,
+               Token.Operators.DIVISION -> null
+            is Token.Symbols.LPAREN -> parseBracketedExpression()
+            is Token.ControlTokens.EOF, Token.ControlTokens.SPLITTER -> null
             else -> throw Exception("Unexpected Token $t!")
         }
     }
@@ -22,14 +27,7 @@ class Parser(private val tokens : Lexer) {
 
     private inline fun <reified A>parseFunctions(token : A) : Expr {
         expectNext<Token.Symbols.LPAREN>()
-        val body : MutableList<Expr> = mutableListOf()
-        while (tokens.peek() != Token.Symbols.RPAREN) { // Rechte Klammer könnte Probleme werfen
-            val expr : Expr? = parseExpr()
-            if (expr != null)
-                body.add(expr)
-            else
-                break
-        }
+        val body = iterateTokensTillRightParenthesis()
         expectNext<Token.Symbols.RPAREN>()
         return Expr.Function(token.toString(), body)
     }
@@ -37,6 +35,15 @@ class Parser(private val tokens : Lexer) {
     private fun parseBracketedExpression(token: Token) : Expr{
         expectNext<Token.Symbols.LPAREN>()
         return Expr.BindedVariables(2.0,'c')
+    }
+
+    private fun iterateTokensTillRightParenthesis() : List<Expr>{
+        val body : MutableList<Expr> = mutableListOf()
+        while (tokens.peek() != Token.Symbols.RPAREN) {
+            val expr : Expr? = parseExpr()
+            if (expr != null) body.add(expr) else break
+        }
+        return body
     }
 
     private fun parseVariables(t : Token.Literals.VARIABLE_LIT) : Expr = Expr.Variable(t.c)
