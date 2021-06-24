@@ -2,28 +2,29 @@ class Parser(private val tokens : Lexer) {
 
     fun parseExpr() : Expr? {
         return when (val t : Token = tokens.next()){
-            is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t, tokens.next())
+            is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t)
             is Token.Functions.SIN, Token.Functions.SQRT -> parseFunctions(t)
+            is Token.Symbols.LPAREN -> parseBracketedExpression(t)
             is Token.ControlTokens.EOF -> null
             else -> throw Exception("Unexpected Token $t!")
         }
     }
 
-    private fun <A,B>parseNumberVariables(t1: A, t2 : B) : Expr = when {
-        t1 is Token.Literals.NUMBER_LIT && t2 is Token.Literals.VARIABLE_LIT -> Expr.BindedVariables(t1.n,t2.c)
-        t1 is Token.Literals.VARIABLE_LIT && t2 is Token.Literals.NUMBER_LIT ->  Expr.BindedVariables(t2.n, t1.c)
-        t1 is Token.Literals.NUMBER_LIT -> parseNumbers(t1)
-        t1 is Token.Literals.VARIABLE_LIT -> parseVariables(t1)
+    private fun <A>parseNumberVariables(token: A) : Expr = when {
+        token is Token.Literals.NUMBER_LIT && tokens.peek() is Token.Literals.VARIABLE_LIT -> Expr.BindedVariables(
+            token.n,(tokens.next() as Token.Literals.VARIABLE_LIT).c)
+        token is Token.Literals.VARIABLE_LIT && tokens.peek() is Token.Literals.NUMBER_LIT -> Expr.BindedVariables(
+            (tokens.next() as Token.Literals.NUMBER_LIT).n, token.c)
+        token is Token.Literals.NUMBER_LIT -> parseNumbers(token)
+        token is Token.Literals.VARIABLE_LIT -> parseVariables(token)
         else -> throw Exception("Coding monkeys at work!")
     }
 
-    //private fun parseFunctions(t : Token) : Expr = Expr.Function(t.toString(),Expr.Number(2.0))
     private inline fun <reified A>parseFunctions(token : A) : Expr {
         expectNext<Token.Symbols.LPAREN>()
-        val body = mutableListOf<Expr>()
+        val body : MutableList<Expr> = mutableListOf()
         while (tokens.peek() != Token.Symbols.RPAREN) { // Rechte Klammer könnte Probleme werfen
             val expr : Expr? = parseExpr()
-            // Crasht beim Aufruf von parseNumberVariables wegen des tokens.next()
             if (expr != null)
                 body.add(expr)
             else
@@ -31,6 +32,11 @@ class Parser(private val tokens : Lexer) {
         }
         expectNext<Token.Symbols.RPAREN>()
         return Expr.Function(token.toString(), body)
+    }
+
+    private fun parseBracketedExpression(token: Token) : Expr{
+        expectNext<Token.Symbols.LPAREN>()
+        return Expr.BindedVariables(2.0,'c')
     }
 
     private fun parseVariables(t : Token.Literals.VARIABLE_LIT) : Expr = Expr.Variable(t.c)

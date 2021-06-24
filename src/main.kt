@@ -1,16 +1,20 @@
 fun main(){
-    val input : String = "sin(sqrt(4u) 2x 5y)"
+    val input : String = "sin(2x)"
     testParser(input)
-
-    testGaussianAlgorithm()
+    //testGaussianAlgorithm()
 }
 
 fun testParser(input : String){
     println("Parsing: $input")
     val lexer = Lexer(input)
     val parser = Parser(lexer)
-    println(parser.parseExpr())
-    println(parser.parseExpr())
+    while (true){
+        val x : Expr? = parser.parseExpr()
+        if (x != null)
+            println(x)
+        else
+            break
+    }
 }
 
 fun testGaussianAlgorithm(){
