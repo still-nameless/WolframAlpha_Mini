@@ -32,9 +32,10 @@ class Parser(private val tokens : Lexer) {
         return Expr.Function(token.toString(), body)
     }
 
-    private fun parseBracketedExpression(token: Token) : Expr{
-        expectNext<Token.Symbols.LPAREN>()
-        return Expr.BindedVariables(2.0,'c')
+    private fun parseBracketedExpression() : Expr{
+        val body = iterateTokensTillRightParenthesis()
+        expectNext<Token.Symbols.RPAREN>()
+        return Expr.Bracketed(body)
     }
 
     private fun iterateTokensTillRightParenthesis() : List<Expr>{
