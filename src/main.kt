@@ -4,6 +4,19 @@ fun main(){
     //testGaussianAlgorithm()
 }
 
+/** evaluate boundedVariables
+ *      1. Fall -> BoundedVariable + Number
+ *      2. Fall -> BoundedVariable - Number
+ *      3. Fall -> BoundedVariable * Number
+ *      4. Fall -> BoundedVariable / Number
+ *      5. Fall -> BoundedVariable + BoundedVariable
+ *      6. Fall -> BoundedVariable - BoundedVariable
+ *      7. Fall -> BoundedVariable + BoundedVariable (same binder)
+ *      8. Fall -> BoundedVariable - BoundedVariable (same binder)
+ *      9. Fall -> BoundedVariable * BoundedVariable (same binder)
+ *     10. Fall -> BoundedVariable / BoundedVariable (same binder)
+ */
+
 fun testParser(input : String){
     println("Parsing: $input")
     val lexer = Lexer(input)
