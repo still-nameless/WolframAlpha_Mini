@@ -1,4 +1,9 @@
 sealed class Expr {
+
+    override fun toString(): String {
+        return this.javaClass.simpleName
+    }
+
     data class Variable (val name: Char): Expr()
     data class Number (val number : Double) : Expr()
     data class BoundVariable (val number: Double, val name: Char) : Expr()

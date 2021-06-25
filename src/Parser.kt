@@ -9,9 +9,9 @@ class Parser(private val tokens : Lexer) {
         return when (val t : Token = tokens.next()) {
             is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t)
             is Token.Functions.SIN, Token.Functions.COS, Token.Functions.TAN, Token.Functions.LOG,
-               Token.Functions.SQRT -> parseFunctions(t)
+               Token.Functions.SQRT -> applyFunction(t,parseToPostfixNotation((parseFunctions(t) as Expr.Function).exprs)) // maybe curry? ;)
             is Token.Operators.ADDITION, Token.Operators.SUBTRACTION, Token.Operators.MULTIPLICATION,
-               Token.Operators.DIVISION -> null
+               Token.Operators.DIVISION -> parseOperator(t)
             is Token.Symbols.LPAREN -> parseBracketedExpression()
             is Token.ControlTokens.EOF, Token.ControlTokens.SPLITTER -> null
             else -> throw Exception("Unexpected Token $t!")
@@ -101,7 +101,7 @@ class Parser(private val tokens : Lexer) {
             (tokens.next() as Token.Literals.NUMBER_LIT).n, token.c)
         token is Token.Literals.NUMBER_LIT -> parseNumbers(token)
         token is Token.Literals.VARIABLE_LIT -> parseVariables(token)
-        else -> throw Exception("Coding monkeys at work!")
+        else -> throw Exception("Unknown token: '$token'")
     }
 
     private inline fun <reified A>parseFunctions(token : A) : Expr {
@@ -200,38 +200,5 @@ class Parser(private val tokens : Lexer) {
                     }
                 }
             }
-
-        private fun fixEquation(){
-        if(equation.size < 2) return
-        when (equation.last()){
-            // Adding multiplication signs
-            is Token.Literals.VARIABLE_LIT -> {
-                when (pElement()){
-                    is Token.Symbols.RPAREN -> insertMultiplicationToken()
-                    is Token.Literals.NUMBER_LIT -> insertMultiplicationToken()
-                }
-            }
-            is Token.Symbols.LPAREN -> {
-                when (pElement()) {
-                    is Token.Literals.VARIABLE_LIT -> insertMultiplicationToken()
-                    is Token.Literals.NUMBER_LIT -> insertMultiplicationToken()
-                }
-            }
-            is Token.Literals.NUMBER_LIT -> {
-                when (pElement()) {
-                    is Token.Literals.VARIABLE_LIT -> insertMultiplicationToken()
-                }
-            }
-        }
-    }
-
-     private fun insertMultiplicationToken() {
-        val lastToken = equation.last()
-        equation[equation.lastIndex] = Token.Operators.MULTIPLICATION
-        equation.add(lastToken)
-    }
-
-
-    private val pElement  = { equation[equation.lastIndex - 1] }
      */
 }
