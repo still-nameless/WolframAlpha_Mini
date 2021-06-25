@@ -1,5 +1,5 @@
 fun main(){
-    val input : String = "sin(2+5*3) * sqrt(4/4) - (2+4-3)"
+    val input : String = "3*(7x + 3y)"
     testParser(input)
     //testGaussianAlgorithm()
 }
