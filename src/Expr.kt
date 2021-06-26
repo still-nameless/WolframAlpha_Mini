@@ -18,4 +18,6 @@ sealed class Expr {
     class Subtraction () : Operators(1)
     class Multiplication () : Operators(2)
     class Division () : Operators(2)
+
+    class Dummy : Expr()
 }

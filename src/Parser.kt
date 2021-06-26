@@ -11,8 +11,8 @@ class Parser(private val tokens : Lexer) {
             is Token.Functions.SIN, Token.Functions.COS, Token.Functions.TAN, Token.Functions.LOG,
                Token.Functions.SQRT -> applyFunction(t,parseToPostfixNotation((parseFunctions(t) as Expr.Function).exprs)) // maybe curry? ;)
             is Token.Operators.ADDITION, Token.Operators.SUBTRACTION, Token.Operators.MULTIPLICATION,
-               Token.Operators.DIVISION -> parseOperator(t)
-            is Token.Symbols.LPAREN -> parseBracketedExpression()
+            Token.Operators.DIVISION -> parseOperator(t)
+            is Token.Symbols.LPAREN -> parseToPostfixNotation((parseBracketedExpression() as Expr.Bracketed).exprs)
             is Token.ControlTokens.EOF, Token.ControlTokens.SPLITTER -> null
             else -> throw Exception("Unexpected Token $t!")
         }
@@ -29,11 +29,11 @@ class Parser(private val tokens : Lexer) {
         }
     }
 
-    private fun parseToPostfixNotation(list : List<Expr>) : Expr.Number {
-        val output : MutableList<Expr> = mutableListOf()
-        val operatorStack : Stack<Expr> = Stack()
-        for (expr in list) {
-            if (expr is Expr.Number || expr is Expr.BoundVariable){
+    private fun parseToPostfixNotation(list: List<Expr>): Expr.Number {
+        val output: MutableList<Expr> = mutableListOf()
+        val operatorStack: Stack<Expr> = Stack()
+        for (expr: Expr in list) {
+            if (expr is Expr.Number || expr is Expr.BoundVariable) {
                 output.add(expr)
             }
             else if (expr is Expr.Addition || expr is Expr.Subtraction || expr is Expr.Multiplication || expr is Expr.Division) {
@@ -41,8 +41,9 @@ class Parser(private val tokens : Lexer) {
                     output.add(operatorStack.pop())
                 }
                 operatorStack.add(expr)
-            }
-            else if(expr is Expr.Function){
+            } else if (expr is Expr.Function) {
+                parseToPostfixNotation(expr.exprs)
+            } else if (expr is Expr.Bracketed) {
                 parseToPostfixNotation(expr.exprs)
             }
         }
@@ -67,9 +68,9 @@ class Parser(private val tokens : Lexer) {
         return variableStack.pop() as Expr.Number
     }
 
-    private fun <A,B>executeOperation(op1 : A, op2 : A, op : B) : Expr?{
-        if (op1 is Expr.Number && op2 is Expr.Number){
-            return when (op){
+    private fun <A, B> executeOperation(op1: A, op2: A, op: B): Expr {
+        if (op1 is Expr.Number && op2 is Expr.Number) {
+            return when (op) {
                 is Expr.Addition -> Expr.Number(op1.number + op2.number)
                 is Expr.Subtraction -> Expr.Number(op1.number - op2.number)
                 is Expr.Multiplication -> Expr.Number(op1.number * op2.number)
@@ -147,58 +148,4 @@ class Parser(private val tokens : Lexer) {
         }
         return next
     }
-
-
-    /*
-        -------- evaluateExpr BEGIN ---------
-        val variableStack : Stack<Expr> = Stack()
-        for (expr in list){
-            if(expr is Expr.Number || expr is Expr.BoundVariable) {
-                variableStack.push(expr)
-            }
-            else if(expr is Expr.Multiplication) {
-                val op1 = variableStack.pop()
-                val op2 = variableStack.pop()
-                if(op1 is Expr.Number && op2 is Expr.Number)
-                    variableStack.push(Expr.Number(op1.number * op2.number))
-                else if(op1 is Expr.BoundVariable && op2 is Expr.Number)
-                    variableStack.push(Expr.BoundVariable(op1.number * op2.number, op1.name))
-                else if(op1 is Expr.Number && op2 is Expr.BoundVariable)
-                    variableStack.push(Expr.BoundVariable(op1.number * op2.number, op2.name))
-                else if(op1 is Expr.BoundVariable && op2 is Expr.BoundVariable)
-                    throw Exception("This is not possible in a linear equation!")
-            }
-        }
-        -------- evaluateExpr END ---------
-
-
-
-
-
-        is Token.Literals.NUMBER_LIT -> {
-                        equation.add(Token.Literals.BINDED_VAR_LIT((pElement() as Token.Literals.NUMBER_LIT).n,
-                            (equation.last() as Token.Literals.VARIABLE_LIT).c))
-                        repeat(2){
-                            equation.removeAt(equation.lastIndex-1)
-                        }
-                    }
-        is Token.Literals.NUMBER_LIT -> {
-                when (pElement()) {
-                    is Token.Literals.VARIABLE_LIT -> {
-                        equation.add(Token.Literals.BINDED_VAR_LIT((equation.last() as Token.Literals.NUMBER_LIT).n,
-                            (pElement() as Token.Literals.VARIABLE_LIT).c))
-                        repeat(2) {
-                            equation.removeAt(equation.lastIndex - 1)
-                        }
-                    }
-                    is Token.Literals.BINDED_VAR_LIT -> {
-                        equation.add(Token.Literals.BINDED_VAR_LIT((pElement() as Token.Literals.BINDED_VAR_LIT).n * (equation.last() as Token.Literals.NUMBER_LIT).n,
-                            (pElement() as Token.Literals.BINDED_VAR_LIT).c))
-                        repeat(2) {
-                            equation.removeAt(equation.lastIndex - 1)
-                        }
-                    }
-                }
-            }
-     */
 }

@@ -1,8 +1,15 @@
 fun main(){
-    val input : String = "3*(7x + 3y)"
-    testParser(input)
+    val input : String = "(2x + 2y + 2 + 3 * 4)" //"3*(7x + 3y)"   "2 + 3 - 7 * 2"
+    testParser2(input)
     //testGaussianAlgorithm()
 }
+
+/**
+ *      (2x + 7
+ *
+ */
+
+
 
 /** evaluate boundedVariables
  *      1. Fall -> BoundedVariable + Number
@@ -25,6 +32,21 @@ fun testParser(input : String){
         val x : Expr? = parser.parseExpr()
         if (x != null)
             println(x)
+        else
+            break
+    }
+    println("fertig")
+}
+
+fun testParser2(input : String){
+    println("Parsing: $input")
+    val res = mutableListOf<Expr>()
+    val lexer = Lexer(input)
+    val parser = Parser(lexer)
+    while (true){
+        val x : Expr? = parser.parseExpr()
+        if (x != null)
+            res.add(x)
         else
             break
     }
