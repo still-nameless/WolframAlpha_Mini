@@ -11,11 +11,8 @@ class Parser(private val tokens : Lexer) {
         return when (t) {
             is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t)
             is Token.Functions.SIN, Token.Functions.COS, Token.Functions.TAN, Token.Functions.LOG,
-            Token.Functions.SQRT -> applyFunction(
-                t,
-                parseToPostfixNotation((parseFunctions(t) as Expr.Function).exprs)
-            ) // maybe curry? ;)
-            is Token.Operators.ADDITION, Token.Operators.SUBTRACTION, Token.Operators.MULTIPLICATION,
+            Token.Functions.SQRT -> evaluateFunction(parseToPostfixNotation((parseFunctions(t) as Expr.Function).exprs))//applyFunction(t,evaluateFunction(parseToPostfixNotation((parseFunctions(t) as Expr.Function).exprs))) // maybe curry? ;)
+            is Token.Operators.ADDITION, Token.Operators.MULTIPLICATION,
             Token.Operators.DIVISION -> parseOperator(t)
             is Token.Operators.SUBTRACTION -> {
                 val tempToken = tokens.next()
