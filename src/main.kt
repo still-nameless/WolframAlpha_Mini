@@ -1,6 +1,9 @@
 fun main(){
-    val input : String = "(2x + 2y + 2 + 3 * 4)" //"3*(7x + 3y)"   "2 + 3 - 7 * 2"
-    testParser2(input)
+    // 7x - 5 + 3
+    // -7x
+    val input : String = "-(7x + 2 * 5 + 2x)" //"3*(7x + 3y)"   "2 + 3 - 7 * 2"
+    val input2 : String = "sin(2+7*4-1)"
+    testParser3(input)
     //testGaussianAlgorithm()
 }
 
@@ -50,6 +53,7 @@ fun testParser2(input : String){
         else
             break
     }
+    res.forEach{ println(it) }
     println("fertig")
 }
 

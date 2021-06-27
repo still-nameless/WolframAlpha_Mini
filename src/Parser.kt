@@ -6,7 +6,9 @@ class Parser(private val tokens : Lexer) {
     private var equation = Expr.Equation(mutableListOf())
 
     fun parseExpr(): Expr? {
-        return when (val t: Token = tokens.next()) {
+        if(tokens.peek() == null) return equation
+        var t : Token = tokens.next()
+        return when (t) {
             is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t)
             is Token.Functions.SIN, Token.Functions.COS, Token.Functions.TAN, Token.Functions.LOG,
             Token.Functions.SQRT -> applyFunction(
@@ -15,7 +17,24 @@ class Parser(private val tokens : Lexer) {
             ) // maybe curry? ;)
             is Token.Operators.ADDITION, Token.Operators.SUBTRACTION, Token.Operators.MULTIPLICATION,
             Token.Operators.DIVISION -> parseOperator(t)
-            is Token.Symbols.LPAREN -> parseToPostfixNotation((parseBracketedExpression() as Expr.Bracketed).exprs)
+            is Token.Operators.SUBTRACTION -> {
+                val tempToken = tokens.next()
+                if(tempToken is Token.Literals.VARIABLE_LIT) {
+                    Expr.BoundVariable(-1.0, tempToken.c)
+                } else if(tempToken is Token.Literals.NUMBER_LIT){
+                    Expr.Number(-tempToken.n)
+                } else if(tempToken is Token.Symbols.LPAREN) {
+                    multiplySome(-1.0,
+                        evaluateBracketedExpression(parseToPostfixNotation((parseBracketedExpression() as Expr.Bracketed).exprs)) as MutableList<Expr>
+                    ).forEach { equation.expressions.add(it)}
+                    return null
+                }
+                else {
+                    t = tempToken
+                    parseOperator(t)
+                }
+            }
+            is Token.Symbols.LPAREN -> evaluateBracketedExpression(parseToPostfixNotation((parseBracketedExpression() as Expr.Bracketed).exprs))[0]
             is Token.ControlTokens.EOF, Token.ControlTokens.SPLITTER -> null
             else -> throw Exception("Unexpected Token $t!")
         }
@@ -32,7 +51,7 @@ class Parser(private val tokens : Lexer) {
         }
     }
 
-    private fun parseToPostfixNotation(list: List<Expr>): Expr.Number {
+    private fun parseToPostfixNotation(list: List<Expr>): MutableList<Expr> {
         val output: MutableList<Expr> = mutableListOf()
         val operatorStack: Stack<Expr> = Stack()
         for (expr: Expr in list) {
@@ -52,45 +71,52 @@ class Parser(private val tokens : Lexer) {
         while (operatorStack.isNotEmpty()) {
             output.add(operatorStack.pop())
         }
-        return evaluateFunction(output)
+        return output
     }
 
     private fun evaluateBracketedExpression(input : List<Expr>) : List<Expr>{
+        val numberStack : Stack<Expr> = Stack()
         val variableStack : Stack<Expr> = Stack()
-        val boundVariableStack : Stack<Expr> = Stack()
         val output : MutableList<Expr> = mutableListOf()
         var containsBoundVariable : Boolean = false
 
+        if(input.size <= 1) return input
+
         for (expr in input) {
             when (expr){
-                is Expr.Number -> variableStack.push(expr)
+                is Expr.Number -> numberStack.push(expr)
                 is Expr.BoundVariable -> {
-                    variableStack.push(Expr.Dummy())
-                    boundVariableStack.push(expr)
+                    numberStack.push(Expr.Dummy())
+                    variableStack.push(expr)
                 }
                 is Expr.Operators -> {
-                    var op2 = variableStack.pop()
-                    var op1 = variableStack.pop()
+                    var op2 = numberStack.pop()
+                    var op1 = numberStack.pop()
 
                     if ((op1 is Expr.Dummy || op2 is Expr.Dummy) && (expr is Expr.Addition || expr is Expr.Subtraction)) {
                         if (op2 is Expr.Dummy) {
-                            op2 = boundVariableStack.pop()
+                            op2 = variableStack.pop()
+                            output.add(Expr.Addition())
                             output.add(op2)
-                            if (op1 is Expr.Number) variableStack.push(op1)
+                            if (op1 is Expr.Number) numberStack.push(op1)
                             else {
                                 if(expr is Expr.Subtraction) output.add(expr) else output.add(Expr.Addition())
                                 output.add(op1)
                             }
                         }
                         else {
-                            op1 = boundVariableStack.pop()
+                            op1 = variableStack.pop()
+                            output.add(Expr.Addition())
                             output.add(op1)
-                            if (op2 is Expr.Number) variableStack.push(op2)
+                            if (op2 is Expr.Number) numberStack.push(op2)
                             else {
                                 if(expr is Expr.Subtraction) output.add(expr) else output.add(Expr.Addition())
                                 output.add(op2)
                             }
                         }
+                    }
+                    else {
+                        numberStack.push(executeOperation(op1, op2, expr))
                     }
                 }
                 else -> throw Exception("Something went terribly wrong!")
@@ -124,8 +150,8 @@ class Parser(private val tokens : Lexer) {
             if (expr is Expr.Number) {
                 variableStack.push(expr)
             } else {
-                val op1 = variableStack.pop() as Expr.Number
                 val op2 = variableStack.pop() as Expr.Number
+                val op1 = variableStack.pop() as Expr.Number
                 variableStack.push(executeOperation(op1, op2, expr))
             }
         }
@@ -192,7 +218,7 @@ class Parser(private val tokens : Lexer) {
         return body
     }
 
-    private fun parseVariables(t: Token.Literals.VARIABLE_LIT): Expr = Expr.Variable(t.c)
+    private fun parseVariables(t: Token.Literals.VARIABLE_LIT): Expr = Expr.BoundVariable(1.0, t.c)
 
     private fun parseNumbers(t: Token.Literals.NUMBER_LIT): Expr = Expr.Number(t.n)
 
