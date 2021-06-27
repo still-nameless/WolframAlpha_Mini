@@ -3,7 +3,7 @@ import kotlin.math.*
 
 class Parser(private val tokens : Lexer) {
 
-    private var equation = Expr.Equation(mutableListOf())
+    var equation = Expr.Equation(mutableListOf())
 
     fun parseExpr(): Expr? {
         if(tokens.peek() == null) return equation
@@ -38,6 +38,17 @@ class Parser(private val tokens : Lexer) {
             is Token.ControlTokens.EOF, Token.ControlTokens.SPLITTER -> null
             else -> throw Exception("Unexpected Token $t!")
         }
+    }
+
+    private fun multiplySome(number : Double, list : MutableList<Expr>) : List<Expr>{
+        for (i in 0 until list.size){
+            when(val tempExpr = list[i]){
+                is Expr.Number -> list[i] = Expr.Number(tempExpr.number * number)
+                is Expr.BoundVariable -> list[i] = Expr.BoundVariable(tempExpr.number * number, tempExpr.name)
+                else -> continue
+            }
+        }
+        return list
     }
 
     private fun <A> applyFunction(token: A, expr: Expr.Number): Expr {
@@ -122,6 +133,9 @@ class Parser(private val tokens : Lexer) {
                 else -> throw Exception("Something went terribly wrong!")
             }
         }
+        // warum dummy auf numberSTack -> makes no sense
+        if ((numberStack.peek() as Expr.Number).number < 0) output.add(Expr.Subtraction()) else output.add(Expr.Addition())
+        output.add(Expr.Number(abs((numberStack.pop() as Expr.Number).number)))
         return output
     }
 

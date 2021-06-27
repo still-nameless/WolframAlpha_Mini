@@ -57,6 +57,16 @@ fun testParser2(input : String){
     println("fertig")
 }
 
+fun testParser3(input : String){
+    println("Parsing: $input")
+    val lexer = Lexer(input)
+    val parser = Parser(lexer)
+    while (true){
+        val x : Expr = parser.parseExpr() ?: break
+    }
+    parser.equation.expressions.forEach { println(it) }
+}
+
 fun testGaussianAlgorithm(){
     val matrix : Array<Array<Double>> = arrayOf(
         arrayOf(-1.0,1.0),
