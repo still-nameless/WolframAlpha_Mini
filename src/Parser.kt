@@ -3,7 +3,7 @@ import kotlin.math.*
 
 class Parser(private val tokens : Lexer) {
 
-    var equation = Expr.Equation(mutableListOf())
+    private var equation = Expr.Equation(mutableListOf())
 
     fun parseExpr(): Expr? {
         return when (val t: Token = tokens.next()) {
@@ -94,7 +94,6 @@ class Parser(private val tokens : Lexer) {
         val numberStack : Stack<Expr> = Stack()
         val variableStack : Stack<Expr> = Stack()
         val output : MutableList<Expr> = mutableListOf()
-        var containsBoundVariable : Boolean = false
 
         if(input.size <= 1) return input
 
