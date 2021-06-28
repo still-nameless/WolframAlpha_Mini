@@ -1,5 +1,5 @@
 fun main(){
-    val input : String = "(a - 3)"
+    val input : String = "(37x - (4 + 2 * 9) + 23x - 5)"
     val input2 : String = "(-1 + (-1) * 34x + 2z +4  + (-1) * 8z)"
     //testRemoveMinus()
     testParser(input)

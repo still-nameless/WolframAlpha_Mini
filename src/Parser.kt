@@ -1,3 +1,4 @@
+import java.beans.Expression
 import java.util.*
 import kotlin.math.*
 
@@ -93,6 +94,7 @@ class Parser(private val tokens : Lexer) {
     private fun evaluateBracketedExpression(input : MutableList<Expr>) : MutableList<Expr>{
         val numberStack : Stack<Expr> = Stack()
         val variableStack : Stack<Expr> = Stack()
+        val operatorStack : Stack<Expr> = Stack()
         val output : MutableList<Expr> = mutableListOf()
 
         if(input.size <= 1) return input
@@ -105,15 +107,16 @@ class Parser(private val tokens : Lexer) {
                     variableStack.push(expr)
                 }
                 is Expr.Operators -> {
+                    operatorStack.push(expr)
                     val op2 = numberStack.pop()
                     val op1 = numberStack.pop()
 
                     if ((op1 is Expr.Dummy || op2 is Expr.Dummy) && (expr is Expr.Addition || expr is Expr.Subtraction)) {
                         if (op2 is Expr.Dummy) {
-                            makeDummiesGreatAgain(op1,expr,variableStack,numberStack,output, input)
+                            makeDummiesGreatAgain(op1,variableStack,numberStack,operatorStack,output)
                         }
                         else {
-                            makeDummiesGreatAgain(op2,expr,variableStack,numberStack,output, input)
+                            makeDummiesGreatAgain(op2,variableStack,numberStack,operatorStack,output)
                         }
                     }
                     else {
@@ -128,12 +131,12 @@ class Parser(private val tokens : Lexer) {
         return output
     }
 
-    private fun makeDummiesGreatAgain(operand : Expr, operator: Expr, variableStack: Stack<Expr>, numberStack: Stack<Expr>, output: MutableList<Expr>, input: MutableList<Expr>) {
+    private fun makeDummiesGreatAgain(operand : Expr, variableStack: Stack<Expr>, numberStack: Stack<Expr>, operatorStack : Stack<Expr>, output: MutableList<Expr>) {
         repeat(variableStack.size){
             val op1 = variableStack.pop()
             output.add(op1)
-            if (input.last() != operator)
-                output.add(operator)
+            if (operatorStack.isNotEmpty())
+                output.add(operatorStack.pop())
         }
         if (operand is Expr.Number)
             numberStack.push(operand)
