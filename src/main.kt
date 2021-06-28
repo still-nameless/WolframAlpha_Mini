@@ -1,9 +1,8 @@
 fun main(){
-    // 7x - 5 + 3
-    // -7x
-    val input : String = "-(7x + 2 * 5 + 2x)" //"3*(7x + 3y)"   "2 + 3 - 7 * 2"
-    val input2 : String = "sin(2+7*4-1)"
-    testParser3(input)
+    val input : String = "(a - 3)"
+    val input2 : String = "(-1 + (-1) * 34x + 2z +4  + (-1) * 8z)"
+    //testRemoveMinus()
+    testParser(input)
     //testGaussianAlgorithm()
 }
 
@@ -11,7 +10,6 @@ fun main(){
  *      (2x + 7
  *
  */
-
 
 
 /** evaluate boundedVariables
@@ -53,19 +51,40 @@ fun testParser2(input : String){
         else
             break
     }
-    res.forEach{ println(it) }
+
     println("fertig")
 }
 
-fun testParser3(input : String){
-    println("Parsing: $input")
+fun stringToList() : MutableList<Expr> {
+    val input = "-(-3+6-3x)"
     val lexer = Lexer(input)
     val parser = Parser(lexer)
+    val res = mutableListOf<Expr>()
     while (true){
-        val x : Expr = parser.parseExpr() ?: break
+        val x : Expr? = parser.parseExpr()
+        if (x != null)
+            res.add(x)
+        else
+            break
     }
-    parser.equation.expressions.forEach { println(it) }
+    return res
 }
+
+fun testRemoveMinus() {
+    val list : MutableList<Expr> = mutableListOf(Expr.Subtraction(), Expr.Bracketed(mutableListOf(Expr.Subtraction(), Expr.Number(3.0), Expr.Addition(), Expr.Number(6.0), Expr.Subtraction(), Expr.Variable(2.0,'x'))))
+    val lexer = Lexer("")
+    val parser = Parser(lexer)
+    parser.removeMinus(list).forEach { println(it) }
+}
+
+//      - ( - 3 + 6
+
+//      Expr.Number()
+//      Expr.Variable()
+//      Expr.Addition()
+//      Expr.Subtraction()
+//      Expr.Multiplication()
+//      Expr.Division()
 
 fun testGaussianAlgorithm(){
     val matrix : Array<Array<Double>> = arrayOf(
