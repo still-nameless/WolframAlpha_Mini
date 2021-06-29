@@ -18,5 +18,5 @@ sealed class Expr {
     class Multiplication () : Operators(2)
     class Division () : Operators(2)
 
-    class Dummy : Expr()
+    object Dummy : Expr()
 }

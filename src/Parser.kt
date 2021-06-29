@@ -3,19 +3,16 @@ import kotlin.math.*
 
 class Parser(private val tokens : Lexer) {
 
-    private var equation = Expr.Equation(mutableListOf())
-
     fun parseExpr(): Expr? {
         return when (val t: Token = tokens.next()) {
             is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t)
             is Token.Functions.SIN, Token.Functions.COS, Token.Functions.TAN, Token.Functions.LOG,
             Token.Functions.SQRT -> applyFunction(
-                t,
-                parseToPostfixNotation((parseFunctions(t) as Expr.Function).exprs) as Expr.Number
+                t, evaluateFunction(parseToPostfixNotation(removeMinus((parseFunctions(t) as Expr.Function).exprs)))
             ) // maybe curry? ;)
             is Token.Operators.ADDITION, Token.Operators.SUBTRACTION, Token.Operators.MULTIPLICATION,
             Token.Operators.DIVISION -> parseOperator(t)
-            is Token.Symbols.LPAREN -> parseToPostfixNotation(removeMinus((parseBracketedExpression() as Expr.Bracketed).exprs))
+            is Token.Symbols.LPAREN -> Expr.PartialEquation(evaluateBracketedExpression(parseToPostfixNotation(removeMinus((parseBracketedExpression() as Expr.Bracketed).exprs))))
             is Token.ControlTokens.EOF, Token.ControlTokens.SPLITTER -> null
             else -> throw Exception("Unexpected Token $t!")
         }
@@ -33,10 +30,8 @@ class Parser(private val tokens : Lexer) {
     }
 
     fun removeMinus(list: MutableList<Expr>) : List<Expr> {
-        // 9x - 3 + 4 => 9x + '-1' * 3 + 4
-        // -3 + 6
         val newEquation : MutableList<Expr> = mutableListOf()
-        var i : Int = 0
+        var i = 0
         while (i < list.size) {
             if (i == 0) {
                 if (list[i] is Expr.Subtraction) {
@@ -58,21 +53,18 @@ class Parser(private val tokens : Lexer) {
             newEquation.add(list[i])
             i++
         }
-        newEquation.forEach { println(it) }
         return newEquation
     }
 
-    private fun parseToPostfixNotation(list : List<Expr>) : Expr {
+    private fun parseToPostfixNotation(list : List<Expr>) : MutableList<Expr> {
         val output : MutableList<Expr> = mutableListOf()
         val operatorStack : Stack<Expr> = Stack()
-        var containsBoundVariable = false
         for (expr in list) {
             if (expr is Expr.Number){
                 output.add(expr)
             }
             else if(expr is Expr.Variable) {
                 output.add(expr)
-                containsBoundVariable = true
             }
             else if (expr is Expr.Addition || expr is Expr.Multiplication || expr is Expr.Division) {
                 while (operatorStack.isNotEmpty() && comparePrecedenceOfOperators(expr,operatorStack.peek()) <= 0){
@@ -87,7 +79,7 @@ class Parser(private val tokens : Lexer) {
         while (operatorStack.isNotEmpty()){
             output.add(operatorStack.pop())
         }
-        return if(containsBoundVariable) Expr.PartialEquation(evaluateBracketedExpression(output)) else evaluateFunction(output)
+        return output
     }
 
     private fun evaluateBracketedExpression(input : MutableList<Expr>) : MutableList<Expr>{
@@ -102,7 +94,7 @@ class Parser(private val tokens : Lexer) {
             when (expr){
                 is Expr.Number -> numberStack.push(expr)
                 is Expr.Variable -> {
-                    numberStack.push(Expr.Dummy())
+                    numberStack.push(Expr.Dummy)
                     variableStack.push(expr)
                 }
                 is Expr.Operators -> {
@@ -118,6 +110,17 @@ class Parser(private val tokens : Lexer) {
                             makeDummiesGreatAgain(op2,variableStack,numberStack,operatorStack,output)
                         }
                     }
+                    else if (op1 is Expr.Dummy && op2 is Expr.Dummy && expr is Expr.Multiplication){
+                        throw Exception("This is not a linear equation!")
+                    }
+                    else if ((op1 is Expr.Dummy || op2 is Expr.Dummy) && (expr is Expr.Multiplication || expr is Expr.Division)){
+                        val res = executeOperationWithVariables(op1, op2, expr, variableStack, numberStack)
+                        if (res is Expr.Number) numberStack.push(res)
+                        else {
+                            numberStack.push(Expr.Dummy)
+                            variableStack.push(res)
+                        }
+                    }
                     else {
                         numberStack.push(executeOperation(op1, op2, expr))
                     }
@@ -127,6 +130,41 @@ class Parser(private val tokens : Lexer) {
         }
         if (numberStack.isNotEmpty() && numberStack.peek() !is Expr.Dummy)
             output.add(numberStack.pop())
+        return sumpUpVariables(output)
+    }
+
+    private fun sumpUpVariables(list : MutableList<Expr>) : MutableList<Expr> {
+        var tempList = list as List<Expr>
+        val summedUpList: MutableList<Expr> = mutableListOf()
+        val variables: MutableList<Char> = mutableListOf()
+        val output: MutableList<Expr> = mutableListOf()
+
+        for (expr in tempList) {
+            if (expr is Expr.Variable && !variables.contains(expr.name))
+                variables.add(expr.name)
+        }
+        for (i in variables.indices) {
+            val filteredList = tempList.filter { if (it is Expr.Variable) it.name == variables[i] else false }
+            summedUpList.add(Expr.Variable(filteredList.sumOf { (it as Expr.Variable).number }, variables[i]))
+        }
+        var i = 0
+        while (i < tempList.size) {
+            val element = tempList[i]
+            if (element !is Expr.Variable)
+                if (element is Expr.Addition && output.last() is Expr.Addition) {
+                    i++
+                    continue
+                }
+                else
+                    output.add(element)
+            else {
+                summedUpList.find { element.name == (it as Expr.Variable).name }?.let { output.add(it) }
+                tempList = tempList.filter { if (it is Expr.Variable) element.name != it.name else true }
+                i = 0
+                continue
+            }
+            i++
+        }
         return output
     }
 
@@ -134,13 +172,18 @@ class Parser(private val tokens : Lexer) {
         repeat(variableStack.size){
             val op1 = variableStack.pop()
             output.add(op1)
-            if (operatorStack.isNotEmpty())
-                output.add(operatorStack.pop())
+            while (operatorStack.isNotEmpty())
+                if (operatorStack.peek() != Expr.Addition())
+                    operatorStack.pop()
+                else{
+                    output.add(operatorStack.pop())
+                    break
+                }
         }
         if (operand is Expr.Number)
             numberStack.push(operand)
         else if (operand is Expr.Dummy)
-            numberStack.add(Expr.Dummy())
+            numberStack.add(Expr.Dummy)
     }
 
     private fun executeOperationWithVariables(op1 : Expr, op2 : Expr, op : Expr, variableStack: Stack<Expr>, numberStack: Stack<Expr>) : Expr {
@@ -175,6 +218,8 @@ class Parser(private val tokens : Lexer) {
     }
 
     private fun evaluateFunction(list: List<Expr>): Expr.Number {
+        if (list.filterIsInstance<Expr.Variable>().isNotEmpty())
+            throw Exception("This is not a linear equation!")
         val variableStack: Stack<Expr> = Stack()
         for (expr in list) {
             if (expr is Expr.Number) {
