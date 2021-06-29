@@ -1,9 +1,10 @@
 fun main(){
-    val input : String = "(37x - (4 + 2 * 9) + 23x - 5)"
-    val input2 : String = "(-1 + (-1) * 34x + 2z +4  + (-1) * 8z)"
+    val input : String = "(4 * 6x + 4y * 2 * 5)"
+    val input2 : String = "(-1 + 17 + 34x + 2z +4  + 54 + 8z)"
     //testRemoveMinus()
     testParser(input)
     //testGaussianAlgorithm()
+
 }
 
 /**

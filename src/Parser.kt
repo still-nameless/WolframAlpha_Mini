@@ -1,4 +1,3 @@
-import java.beans.Expression
 import java.util.*
 import kotlin.math.*
 
@@ -75,7 +74,7 @@ class Parser(private val tokens : Lexer) {
                 output.add(expr)
                 containsBoundVariable = true
             }
-            else if (expr is Expr.Addition || expr is Expr.Subtraction || expr is Expr.Multiplication || expr is Expr.Division) {
+            else if (expr is Expr.Addition || expr is Expr.Multiplication || expr is Expr.Division) {
                 while (operatorStack.isNotEmpty() && comparePrecedenceOfOperators(expr,operatorStack.peek()) <= 0){
                     output.add(operatorStack.pop())
                 }
@@ -144,21 +143,33 @@ class Parser(private val tokens : Lexer) {
             numberStack.add(Expr.Dummy())
     }
 
-    private fun <A,B,C>executeOperationWithVariables(op1 : A, op2 : B, op : C) : Expr {
-
-        if(op1 is Expr.Number && op2 is Expr.Variable) {
+    private fun executeOperationWithVariables(op1 : Expr, op2 : Expr, op : Expr, variableStack: Stack<Expr>, numberStack: Stack<Expr>) : Expr {
+        var operand1 : Expr = op1
+        var operand2 : Expr = op2
+        if (op2 is Expr.Dummy)
+            operand2 = variableStack.pop()
+        if(op1 is Expr.Dummy)
+            operand1 = variableStack.pop()
+        if(operand1 is Expr.Number && operand2 is Expr.Variable) {
             return when (op){
-                is Expr.Multiplication -> Expr.Variable(op1.number * op2.number, op2.name)
-                is Expr.Division -> Expr.Variable(op1.number / op2.number, op2.name)
+                is Expr.Multiplication -> Expr.Variable(operand1.number * operand2.number, operand2.name)
+                is Expr.Division -> Expr.Variable(operand1.number / operand2.number, operand2.name)
                 else -> throw Exception("Illegal operator: '$op'!")
             }
         }
-        else if(op1 is Expr.Variable && op2 is Expr.Number){
+        else if(operand1 is Expr.Variable && operand2 is Expr.Number){
             return when (op){
-                is Expr.Multiplication -> Expr.Variable(op1.number * op2.number, op1.name)
-                is Expr.Division -> Expr.Variable(op1.number / op2.number, op1.name)
+                is Expr.Multiplication -> Expr.Variable(operand1.number * operand2.number, operand1.name)
+                is Expr.Division -> Expr.Variable(operand1.number / operand2.number, operand1.name)
                 else -> throw Exception("Illegal operator: '$op'!")
             }
+        }
+        else if(operand1 is Expr.Variable && operand2 is Expr.Variable && operand1.name == operand2.name){
+            if (op is Expr.Division) {
+                return Expr.Number(operand1.number / operand2.number)
+            }
+            else
+                throw Exception("Illegal operator: '$op'!")
         }
         else throw Exception("ERROR")
     }
