@@ -66,6 +66,9 @@ class Parser(private val tokens : Lexer) {
             else if(expr is Expr.Variable) {
                 output.add(expr)
             }
+            else if (expr is Expr.PartialEquation){
+                parseToPostfixNotation(expr.exprs).forEach { output.add(it) }
+            }
             else if (expr is Expr.Addition || expr is Expr.Multiplication || expr is Expr.Division) {
                 while (operatorStack.isNotEmpty() && comparePrecedenceOfOperators(expr,operatorStack.peek()) <= 0){
                     output.add(operatorStack.pop())
@@ -73,7 +76,7 @@ class Parser(private val tokens : Lexer) {
                 operatorStack.add(expr)
             }
             else if(expr is Expr.Function){
-                parseToPostfixNotation(expr.exprs)
+                parseToPostfixNotation(expr.exprs).forEach { output.add(it) }
             }
         }
         while (operatorStack.isNotEmpty()){
