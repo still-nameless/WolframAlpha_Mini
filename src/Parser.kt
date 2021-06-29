@@ -69,7 +69,7 @@ class Parser(private val tokens : Lexer) {
             else if (expr is Expr.PartialEquation){
                 parseToPostfixNotation(expr.exprs).forEach { output.add(it) }
             }
-            else if (expr is Expr.Addition || expr is Expr.Multiplication || expr is Expr.Division) {
+            else if (expr is Expr.Addition || expr is Expr.Subtraction || expr is Expr.Multiplication || expr is Expr.Division) {
                 while (operatorStack.isNotEmpty() && comparePrecedenceOfOperators(expr,operatorStack.peek()) <= 0){
                     output.add(operatorStack.pop())
                 }
@@ -78,6 +78,7 @@ class Parser(private val tokens : Lexer) {
             else if(expr is Expr.Function){
                 parseToPostfixNotation(expr.exprs).forEach { output.add(it) }
             }
+
         }
         while (operatorStack.isNotEmpty()){
             output.add(operatorStack.pop())
@@ -107,10 +108,10 @@ class Parser(private val tokens : Lexer) {
 
                     if ((op1 is Expr.Dummy || op2 is Expr.Dummy) && (expr is Expr.Addition || expr is Expr.Subtraction)) {
                         if (op2 is Expr.Dummy) {
-                            makeDummiesGreatAgain(op1,variableStack,numberStack,operatorStack,output)
+                            makeDummiesGreatAgain(op1,variableStack,numberStack,output)
                         }
                         else {
-                            makeDummiesGreatAgain(op2,variableStack,numberStack,operatorStack,output)
+                            makeDummiesGreatAgain(op2,variableStack,numberStack,output)
                         }
                     }
                     else if (op1 is Expr.Dummy && op2 is Expr.Dummy && expr is Expr.Multiplication){
@@ -133,11 +134,13 @@ class Parser(private val tokens : Lexer) {
         }
         if (numberStack.isNotEmpty() && numberStack.peek() !is Expr.Dummy)
             output.add(numberStack.pop())
+        else
+            output.removeLast()
         return sumpUpVariables(output)
     }
 
     private fun sumpUpVariables(list : MutableList<Expr>) : MutableList<Expr> {
-        var tempList = list as List<Expr>
+        var tempList : MutableList<Expr> = list
         val summedUpList: MutableList<Expr> = mutableListOf()
         val variables: MutableList<Char> = mutableListOf()
         val output: MutableList<Expr> = mutableListOf()
@@ -158,11 +161,13 @@ class Parser(private val tokens : Lexer) {
                     i++
                     continue
                 }
-                else
+                else {
                     output.add(element)
+                    tempList.removeAt(i--)
+                }
             else {
                 summedUpList.find { element.name == (it as Expr.Variable).name }?.let { output.add(it) }
-                tempList = tempList.filter { if (it is Expr.Variable) element.name != it.name else true }
+                tempList = tempList.filter { if (it is Expr.Variable) element.name != it.name else true } as MutableList<Expr>
                 i = 0
                 continue
             }
@@ -171,17 +176,11 @@ class Parser(private val tokens : Lexer) {
         return output
     }
 
-    private fun makeDummiesGreatAgain(operand : Expr, variableStack: Stack<Expr>, numberStack: Stack<Expr>, operatorStack : Stack<Expr>, output: MutableList<Expr>) {
+    private fun makeDummiesGreatAgain(operand : Expr, variableStack: Stack<Expr>, numberStack: Stack<Expr>, output: MutableList<Expr>) {
         repeat(variableStack.size){
             val op1 = variableStack.pop()
             output.add(op1)
-            while (operatorStack.isNotEmpty())
-                if (operatorStack.peek() != Expr.Addition())
-                    operatorStack.pop()
-                else{
-                    output.add(operatorStack.pop())
-                    break
-                }
+            output.add(Expr.Addition())
         }
         if (operand is Expr.Number)
             numberStack.push(operand)
@@ -217,7 +216,7 @@ class Parser(private val tokens : Lexer) {
             else
                 throw Exception("Illegal operator: '$op'!")
         }
-        else throw Exception("ERROR")
+        else throw Exception("This is not a linear equation!")
     }
 
     private fun evaluateFunction(list: List<Expr>): Expr.Number {
