@@ -13,7 +13,13 @@ class Parser(private val tokens : Lexer) {
             ) // maybe curry? ;)
             is Token.Operators.ADDITION, Token.Operators.SUBTRACTION, Token.Operators.MULTIPLICATION,
             Token.Operators.DIVISION -> parseOperator(t)
-            is Token.Symbols.LPAREN -> Expr.PartialEquation(evaluateBracketedExpression(parseToPostfixNotation(removeMinus((parseBracketedExpression() as Expr.Bracketed).exprs))))
+            is Token.Symbols.LPAREN -> {
+                val a = (parseBracketedExpression() as Expr.Bracketed).exprs
+                val b = removeMinus(a)
+                val c = parseToPostfixNotation(b)
+                val d = evaluateBracketedExpression(c)
+                Expr.PartialEquation(d) //evaluateBracketedExpression(parseToPostfixNotation(removeMinus((parseBracketedExpression() as Expr.Bracketed).exprs))))
+            }
             is Token.ControlTokens.EOF, Token.ControlTokens.SPLITTER -> null
             else -> throw Exception("Unexpected Token $t!")
         }
@@ -106,17 +112,19 @@ class Parser(private val tokens : Lexer) {
 
     private fun isFactorInFrontBrackets(list : MutableList<Expr>, index : Int) :Boolean {
         if (list.size < 3) return false
-        return index > 1 && list[index-1] is Expr.Multiplication && (list[index-2] is Expr.Number || list[index-2] is Expr.Variable)
+        return index > 1 && list[index-1] is Expr.Multiplication && (list[index-2] is Expr.Number || list[index-2] is Expr.Variable || list[index-2] is Expr.PartialEquation)
     }
 
     private fun isFactorBehindBrackets(list : MutableList<Expr>, index : Int) : Boolean {
         if (list.size < 3) return false
-        return index < list.size - 2 && list[index+1] is Expr.Multiplication && (list[index+2] is Expr.Number || list[index+2] is Expr.Variable)
+        return index < list.size - 2 && list[index+1] is Expr.Multiplication && (list[index+2] is Expr.Number || list[index+2] is Expr.Variable || list[index+2] is Expr.PartialEquation)
     }
 
-    private fun multiplyOutBracket(input : MutableList<Expr>, index : Int, output: MutableList<Expr>) : Expr.PartialEquation{
-        if (input.size <= 2) return Expr.PartialEquation(input)
-        if (isFactorBehindBrackets(input,index) && isFactorBehindBrackets(input,index)){
+    private fun multiplyOutBracket(input : MutableList<Expr>, index : Int) : MutableList<Expr>{
+        if (input.size <= 2) {
+            return (input[0] as Expr.PartialEquation).exprs
+        }
+        if (isFactorInFrontBrackets(input,index) && isFactorBehindBrackets(input,index)){
             val factor = executeOperationWithVariables(input[index-2],input[index+2],Expr.Multiplication())
             return Expr.PartialEquation((
                     input.subList(0, index-2)
@@ -124,13 +132,16 @@ class Parser(private val tokens : Lexer) {
                   + input.subList(index+3, input.size)) as MutableList<Expr>
             )
         }
-
         else if (isFactorInFrontBrackets(input,index)){
-            applyFactor(input,index,-2)
+            val result : MutableList<Expr> = mutableListOf(Expr.PartialEquation(applyFactor(input,index,-2)))
+            input.subList(0, index-2).forEach { result.add(it) }
+            return result
         }
-
-        else if (isFactorBehindBrackets(input,index)){
-            applyFactor(input,index,2)
+        else if (isFactorBehindBrackets(input,index)) {
+            val result : MutableList<Expr> = mutableListOf()
+            result.add(Expr.PartialEquation(applyFactor(input, index, 2)))
+            input.subList(index+3, input.size).forEach { result.add(it) }
+            return result
         }
         return Expr.PartialEquation(output)
     }
