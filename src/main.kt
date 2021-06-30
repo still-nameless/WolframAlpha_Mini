@@ -2,8 +2,8 @@ fun main(){
     val input : String = "(28x + 2y + 4 - 3 + sin(2 + 4) + (7y - 3x * 2))"
     val input2 : String = "(-1 + 17 + 34x + 2z +4  + 54 + 8z)"
     val input3 : String = "(-1x + 2y + 3z + 4a + 2)"
-    val input4 : String = "(-(3x + 3))" // Klammer wird nicht richtig aufgelöst
-    val input5 : String = "sin(PI)"
+    val input4 : String = "(-(3 + 3)*2*3)" // Klammer wird nicht richtig aufgelöst
+    val input5 : String = "()"
     testParser(input4)
     //testGaussianAlgorithm()
 }

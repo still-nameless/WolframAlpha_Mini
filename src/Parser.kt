@@ -65,10 +65,13 @@ class Parser(private val tokens : Lexer) {
         return newEquation
     }
 
-    private fun parseToPostfixNotation(list : List<Expr>) : MutableList<Expr> {
+    private fun parseToPostfixNotation(list : MutableList<Expr>) : MutableList<Expr> {
         val output : MutableList<Expr> = mutableListOf()
         val operatorStack : Stack<Expr> = Stack()
-        for (expr in list) {
+        var modifiedInput : MutableList<Expr> = list
+        var i = 0
+        while (i < modifiedInput.size) {
+            val expr = modifiedInput[i]
             if (expr is Expr.Number){
                 output.add(expr)
             }
@@ -76,7 +79,12 @@ class Parser(private val tokens : Lexer) {
                 output.add(expr)
             }
             else if (expr is Expr.PartialEquation){
-                parseToPostfixNotation(expr.exprs).forEach { output.add(it) }
+                modifiedInput = parseToPostfixNotation((multiplyOutBracket(modifiedInput,i,output)).exprs)
+                output.clear()
+                operatorStack.clear()
+                modifiedInput.forEach { output.add(it) }
+                i = 0
+                //parseToPostfixNotation(expr.exprs).forEach { output.add(it) }
             }
             else if (expr is Expr.Addition || expr is Expr.Subtraction || expr is Expr.Multiplication || expr is Expr.Division) {
                 while (operatorStack.isNotEmpty() && comparePrecedenceOfOperators(expr,operatorStack.peek()) <= 0){
@@ -87,10 +95,58 @@ class Parser(private val tokens : Lexer) {
             else if(expr is Expr.Function){
                 parseToPostfixNotation(expr.exprs).forEach { output.add(it) }
             }
+            i++
         }
         while (operatorStack.isNotEmpty()){
             output.add(operatorStack.pop())
         }
+        return output
+    }
+
+
+    private fun isFactorInFrontBrackets(list : MutableList<Expr>, index : Int) :Boolean {
+        if (list.size < 3) return false
+        return index > 1 && list[index-1] is Expr.Multiplication && (list[index-2] is Expr.Number || list[index-2] is Expr.Variable)
+    }
+
+    private fun isFactorBehindBrackets(list : MutableList<Expr>, index : Int) : Boolean {
+        if (list.size < 3) return false
+        return index < list.size - 2 && list[index+1] is Expr.Multiplication && (list[index+2] is Expr.Number || list[index+2] is Expr.Variable)
+    }
+
+    private fun multiplyOutBracket(input : MutableList<Expr>, index : Int, output: MutableList<Expr>) : Expr.PartialEquation{
+        if (input.size <= 2) return Expr.PartialEquation(input)
+        if (isFactorBehindBrackets(input,index) && isFactorBehindBrackets(input,index)){
+            val factor = executeOperationWithVariables(input[index-2],input[index+2],Expr.Multiplication())
+            return Expr.PartialEquation((
+                    input.subList(0, index-2)
+                  + applyFactor(input,index,2,factor)
+                  + input.subList(index+3, input.size)) as MutableList<Expr>
+            )
+        }
+
+        else if (isFactorInFrontBrackets(input,index)){
+            applyFactor(input,index,-2)
+        }
+
+        else if (isFactorBehindBrackets(input,index)){
+            applyFactor(input,index,2)
+        }
+        return Expr.PartialEquation(output)
+    }
+
+    private fun applyFactor(input : MutableList<Expr>, index : Int, offSet : Int, factor : Expr? = null) : MutableList<Expr>{
+        val output : MutableList<Expr> = mutableListOf()
+        for (expr in (input[index] as Expr.PartialEquation).exprs){
+            if (expr is Expr.Variable || expr is Expr.Number){
+                if (factor == null)
+                    output.add(executeOperationWithVariables(input[index+offSet],expr,Expr.Multiplication()))
+                else
+                    output.add(executeOperationWithVariables(factor,expr,Expr.Multiplication()))
+                output.add(Expr.Addition())
+            }
+        }
+        output.removeLast()
         return output
     }
 
@@ -134,7 +190,7 @@ class Parser(private val tokens : Lexer) {
                         }
                     }
                     else {
-                        numberStack.push(executeOperation(op1, op2, expr))
+                        numberStack.push(executeOperationWithVariables(op1, op2, expr))
                     }
                 }
                 else -> throw Exception("Something went terribly wrong!")
@@ -198,7 +254,7 @@ class Parser(private val tokens : Lexer) {
             numberStack.add(Expr.Dummy)
     }
 
-    private fun executeOperationWithVariables(op1 : Expr, op2 : Expr, op : Expr, variableStack: Stack<Expr>) : Expr {
+    private fun executeOperationWithVariables(op1 : Expr, op2 : Expr, op : Expr, variableStack: Stack<Expr>? = null) : Expr {
         var operand1 : Expr = op1
         var operand2 : Expr = op2
         if (op2 is Expr.Dummy && variableStack != null)
@@ -249,7 +305,7 @@ class Parser(private val tokens : Lexer) {
                 if (op1 is Expr.Variable || op2 is Expr.Variable)
                     variableStack.push(executeOperationWithVariables(op1,op2,expr,variableStack))
                 else
-                    variableStack.push(executeOperation(op1,op2,expr))
+                    variableStack.push(executeOperationWithVariables(op1,op2,expr))
             }
         }
         return variableStack.pop() as Expr.Number
