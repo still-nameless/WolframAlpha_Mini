@@ -59,6 +59,8 @@ class Lexer(input: String) {
             "tan" -> Token.Functions.TAN
             "sqrt" -> Token.Functions.SQRT
             "log" -> Token.Functions.LOG
+            "EXP","exp" -> Token.Functions.EXP
+            "PI","Pi","pi" -> Token.Constants.PI
             else -> when(result.length) {
                 1 -> Token.Literals.VARIABLE_LIT(result.single())
                 else -> throw Exception("Unknown Expression '${result}'")

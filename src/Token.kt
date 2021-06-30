@@ -5,13 +5,19 @@ sealed class Token {
         return this.javaClass.simpleName
     }
 
-    //Mathematical Functions
+    // Constants
+    object Constants : Token() {
+        object PI : Token()
+    }
+
+    // Mathematical Functions
     object Functions : Token() {
         object COS : Token()
         object SIN : Token()
         object TAN : Token()
         object LOG : Token()
         object SQRT : Token()
+        object EXP : Token()
     }
 
     // Symbols

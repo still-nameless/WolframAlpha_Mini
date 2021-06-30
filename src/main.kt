@@ -2,31 +2,11 @@ fun main(){
     val input : String = "(28x + 2y + 4 - 3 + sin(2 + 4) + (7y - 3x * 2))"
     val input2 : String = "(-1 + 17 + 34x + 2z +4  + 54 + 8z)"
     val input3 : String = "(-1x + 2y + 3z + 4a + 2)"
-    val input4 : String = "((-1x / 2y) + sin(3))"
-    //testRemoveMinus()
+    val input4 : String = "(-(3x + 3))" // Klammer wird nicht richtig aufgelöst
+    val input5 : String = "sin(PI)"
     testParser(input4)
     //testGaussianAlgorithm()
-
 }
-
-/**
- *
- *          2x 8 + 3z -
- */
-
-
-/** evaluate boundedVariables
- *      1. Fall -> BoundedVariable + Number
- *      2. Fall -> BoundedVariable - Number
- *      3. Fall -> BoundedVariable * Number
- *      4. Fall -> BoundedVariable / Number
- *      5. Fall -> BoundedVariable + BoundedVariable
- *      6. Fall -> BoundedVariable - BoundedVariable
- *      7. Fall -> BoundedVariable + BoundedVariable (same binder)
- *      8. Fall -> BoundedVariable - BoundedVariable (same binder)
- *      9. Fall -> BoundedVariable * BoundedVariable (same binder)
- *     10. Fall -> BoundedVariable / BoundedVariable (same binder)
- */
 
 fun testParser(input : String){
     println("Parsing: $input")
@@ -57,37 +37,6 @@ fun testParser2(input : String){
 
     println("fertig")
 }
-
-fun stringToList() : MutableList<Expr> {
-    val input = "-(-3+6-3x)"
-    val lexer = Lexer(input)
-    val parser = Parser(lexer)
-    val res = mutableListOf<Expr>()
-    while (true){
-        val x : Expr? = parser.parseExpr()
-        if (x != null)
-            res.add(x)
-        else
-            break
-    }
-    return res
-}
-
-fun testRemoveMinus() {
-    val list : MutableList<Expr> = mutableListOf(Expr.Subtraction(), Expr.Bracketed(mutableListOf(Expr.Subtraction(), Expr.Number(3.0), Expr.Addition(), Expr.Number(6.0), Expr.Subtraction(), Expr.Variable(2.0,'x'))))
-    val lexer = Lexer("")
-    val parser = Parser(lexer)
-    parser.removeMinus(list).forEach { println(it) }
-}
-
-//      - ( - 3 + 6
-
-//      Expr.Number()
-//      Expr.Variable()
-//      Expr.Addition()
-//      Expr.Subtraction()
-//      Expr.Multiplication()
-//      Expr.Division()
 
 fun testGaussianAlgorithm(){
     val matrix : Array<Array<Double>> = arrayOf(

@@ -6,8 +6,9 @@ class Parser(private val tokens : Lexer) {
     fun parseExpr(): Expr? {
         return when (val t: Token = tokens.next()) {
             is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t)
+            is Token.Constants.PI -> parseConstants(t)
             is Token.Functions.SIN, Token.Functions.COS, Token.Functions.TAN, Token.Functions.LOG,
-            Token.Functions.SQRT -> applyFunction(
+            Token.Functions.SQRT, Token.Functions.EXP -> applyFunction(
                 t, evaluateFunction(parseToPostfixNotation(removeMinus((parseFunctions(t) as Expr.Function).exprs)))
             ) // maybe curry? ;)
             is Token.Operators.ADDITION, Token.Operators.SUBTRACTION, Token.Operators.MULTIPLICATION,
@@ -18,6 +19,13 @@ class Parser(private val tokens : Lexer) {
         }
     }
 
+    private fun parseConstants(token: Token) : Expr{
+        return when (token){
+            is Token.Constants.PI -> Expr.Number(Math.PI)
+            else -> throw Exception("Unknown Constant '$token'!")
+        }
+    }
+
     private fun <A> applyFunction(token: A, expr: Expr.Number): Expr {
         return when (token) {
             is Token.Functions.SIN -> Expr.Number(sin(expr.number))
@@ -25,11 +33,12 @@ class Parser(private val tokens : Lexer) {
             is Token.Functions.TAN -> Expr.Number(tan(expr.number))
             is Token.Functions.SQRT -> Expr.Number(sqrt(expr.number))
             is Token.Functions.LOG -> Expr.Number(ln(expr.number))
+            is Token.Functions.EXP -> Expr.Number(exp(expr.number))
             else -> throw Exception("Applying '$token' - function failed!")
         }
     }
 
-    fun removeMinus(list: MutableList<Expr>) : List<Expr> {
+    private fun removeMinus(list: MutableList<Expr>) : List<Expr> {
         val newEquation : MutableList<Expr> = mutableListOf()
         var i = 0
         while (i < list.size) {
@@ -78,7 +87,6 @@ class Parser(private val tokens : Lexer) {
             else if(expr is Expr.Function){
                 parseToPostfixNotation(expr.exprs).forEach { output.add(it) }
             }
-
         }
         while (operatorStack.isNotEmpty()){
             output.add(operatorStack.pop())
@@ -118,7 +126,7 @@ class Parser(private val tokens : Lexer) {
                         throw Exception("This is not a linear equation!")
                     }
                     else if ((op1 is Expr.Dummy || op2 is Expr.Dummy) && (expr is Expr.Multiplication || expr is Expr.Division)){
-                        val res = executeOperationWithVariables(op1, op2, expr, variableStack, numberStack)
+                        val res = executeOperationWithVariables(op1, op2, expr, variableStack)
                         if (res is Expr.Number) numberStack.push(res)
                         else {
                             numberStack.push(Expr.Dummy)
@@ -134,8 +142,10 @@ class Parser(private val tokens : Lexer) {
         }
         if (numberStack.isNotEmpty() && numberStack.peek() !is Expr.Dummy)
             output.add(numberStack.pop())
-        else
+        else if (output.size > 1)
             output.removeLast()
+        else if (variableStack.peek() != null)
+            output.add(variableStack.pop())
         return sumpUpVariables(output)
     }
 
@@ -188,7 +198,7 @@ class Parser(private val tokens : Lexer) {
             numberStack.add(Expr.Dummy)
     }
 
-    private fun executeOperationWithVariables(op1 : Expr, op2 : Expr, op : Expr, variableStack: Stack<Expr>, numberStack: Stack<Expr>) : Expr {
+    private fun executeOperationWithVariables(op1 : Expr, op2 : Expr, op : Expr, variableStack: Stack<Expr>) : Expr {
         var operand1 : Expr = op1
         var operand2 : Expr = op2
         if (op2 is Expr.Dummy)
@@ -220,16 +230,17 @@ class Parser(private val tokens : Lexer) {
     }
 
     private fun evaluateFunction(list: List<Expr>): Expr.Number {
-        if (list.filterIsInstance<Expr.Variable>().isNotEmpty())
-            throw Exception("This is not a linear equation!")
         val variableStack: Stack<Expr> = Stack()
         for (expr in list) {
-            if (expr is Expr.Number) {
+            if (expr is Expr.Number || expr is Expr.Variable) {
                 variableStack.push(expr)
             } else {
-                val op2 = variableStack.pop() as Expr.Number
-                val op1 = variableStack.pop() as Expr.Number
-                variableStack.push(executeOperation(op1, op2, expr))
+                val op2 = variableStack.pop()
+                val op1 = variableStack.pop()
+                if (op1 is Expr.Variable || op2 is Expr.Variable)
+                    variableStack.push(executeOperationWithVariables(op1,op2,expr,variableStack))
+                else
+                    variableStack.push(executeOperation(op1,op2,expr))
             }
         }
         return variableStack.pop() as Expr.Number
