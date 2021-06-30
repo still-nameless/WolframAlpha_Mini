@@ -38,7 +38,7 @@ class Parser(private val tokens : Lexer) {
         }
     }
 
-    private fun removeMinus(list: MutableList<Expr>) : List<Expr> {
+    private fun removeMinus(list: MutableList<Expr>) : MutableList<Expr> {
         val newEquation : MutableList<Expr> = mutableListOf()
         var i = 0
         while (i < list.size) {
@@ -201,10 +201,19 @@ class Parser(private val tokens : Lexer) {
     private fun executeOperationWithVariables(op1 : Expr, op2 : Expr, op : Expr, variableStack: Stack<Expr>) : Expr {
         var operand1 : Expr = op1
         var operand2 : Expr = op2
-        if (op2 is Expr.Dummy)
+        if (op2 is Expr.Dummy && variableStack != null)
             operand2 = variableStack.pop()
-        if(op1 is Expr.Dummy)
+        if(op1 is Expr.Dummy && variableStack != null)
             operand1 = variableStack.pop()
+        if (op1 is Expr.Number && op2 is Expr.Number) {
+            return when (op) {
+                is Expr.Addition -> Expr.Number(op1.number + op2.number)
+                is Expr.Subtraction -> Expr.Number(op1.number - op2.number)
+                is Expr.Multiplication -> Expr.Number(op1.number * op2.number)
+                is Expr.Division -> Expr.Number(op1.number / op2.number)
+                else -> throw Exception("Illegal operator: '$op'!")
+            }
+        }
         if(operand1 is Expr.Number && operand2 is Expr.Variable) {
             return when (op){
                 is Expr.Multiplication -> Expr.Variable(operand1.number * operand2.number, operand2.name)
@@ -244,19 +253,6 @@ class Parser(private val tokens : Lexer) {
             }
         }
         return variableStack.pop() as Expr.Number
-    }
-
-    private fun <A, B> executeOperation(op1: A, op2: A, op: B): Expr {
-        if (op1 is Expr.Number && op2 is Expr.Number) {
-            return when (op) {
-                is Expr.Addition -> Expr.Number(op1.number + op2.number)
-                is Expr.Subtraction -> Expr.Number(op1.number - op2.number)
-                is Expr.Multiplication -> Expr.Number(op1.number * op2.number)
-                is Expr.Division -> Expr.Number(op1.number / op2.number)
-                else -> throw Exception("Illegal operator: '$op'!")
-            }
-        }
-        throw Exception("Unknown operand: '$op1'")
     }
 
     /**
