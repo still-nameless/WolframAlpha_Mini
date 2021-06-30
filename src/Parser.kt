@@ -72,7 +72,7 @@ class Parser(private val tokens : Lexer) {
     }
 
     private fun parseToPostfixNotation(list : MutableList<Expr>) : MutableList<Expr> {
-        val output : MutableList<Expr> = mutableListOf()
+        var output : MutableList<Expr> = mutableListOf()
         val operatorStack : Stack<Expr> = Stack()
         var modifiedInput : MutableList<Expr> = list
         var i = 0
@@ -84,12 +84,19 @@ class Parser(private val tokens : Lexer) {
             else if(expr is Expr.Variable) {
                 output.add(expr)
             }
-            else if (expr is Expr.PartialEquation){
-                modifiedInput = parseToPostfixNotation((multiplyOutBracket(modifiedInput,i,output)).exprs)
+            else if (expr is Expr.PartialEquation){ //(3*(5x + 2)*2*3) => (30x +12) * 3 =>
+                modifiedInput = multiplyOutBracket(modifiedInput,i)
+                output.clear()
+                operatorStack.clear()
+                i = 0
+                continue
+                /*
                 output.clear()
                 operatorStack.clear()
                 modifiedInput.forEach { output.add(it) }
                 i = 0
+                continue
+                 */
                 //parseToPostfixNotation(expr.exprs).forEach { output.add(it) }
             }
             else if (expr is Expr.Addition || expr is Expr.Subtraction || expr is Expr.Multiplication || expr is Expr.Division) {
@@ -126,11 +133,11 @@ class Parser(private val tokens : Lexer) {
         }
         if (isFactorInFrontBrackets(input,index) && isFactorBehindBrackets(input,index)){
             val factor = executeOperationWithVariables(input[index-2],input[index+2],Expr.Multiplication())
-            return Expr.PartialEquation((
-                    input.subList(0, index-2)
-                  + applyFactor(input,index,2,factor)
-                  + input.subList(index+3, input.size)) as MutableList<Expr>
-            )
+            val result : MutableList<Expr> = mutableListOf()
+            input.subList(0, index-2).forEach { result.add(it) }
+            result.add(Expr.PartialEquation(applyFactor(input,index,2,factor)))
+            input.subList(index+3, input.size).forEach { result.add(it) }
+            return result
         }
         else if (isFactorInFrontBrackets(input,index)){
             val result : MutableList<Expr> = mutableListOf(Expr.PartialEquation(applyFactor(input,index,-2)))
@@ -143,7 +150,7 @@ class Parser(private val tokens : Lexer) {
             input.subList(index+3, input.size).forEach { result.add(it) }
             return result
         }
-        return Expr.PartialEquation(output)
+        return (input[0] as Expr.PartialEquation).exprs
     }
 
     private fun applyFactor(input : MutableList<Expr>, index : Int, offSet : Int, factor : Expr? = null) : MutableList<Expr>{
