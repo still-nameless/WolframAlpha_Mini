@@ -53,10 +53,9 @@ fun testParser2(input : String){
 
 fun testGaussianAlgorithm(){
     val matrix : Array<Array<Double>> = arrayOf(
-        arrayOf(-1.0,1.0),
-        arrayOf(-4.0,1.0)
+        arrayOf(8.0)
     )
-    val solutions : Array<Double> = arrayOf(2.0,-4.0)
+    val solutions : Array<Double> = arrayOf(-4.0)
     val equationSolver = EquationSolver()
     val solutionVector : Array<Double> = equationSolver.performGaussianElimination(matrix, solutions)
 

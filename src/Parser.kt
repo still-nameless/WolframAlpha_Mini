@@ -5,20 +5,13 @@ class Parser(private val tokens : Lexer) {
             is Token.Literals.NUMBER_LIT, is Token.Literals.VARIABLE_LIT -> parseNumberVariables(t)
             is Token.Constants.PI -> parseConstants(t)
             is Token.Functions.SIN, Token.Functions.COS, Token.Functions.TAN, Token.Functions.LOG,
-            Token.Functions.SQRT, Token.Functions.EXP -> applyFunction(
-                t, evaluateFunction(parseToPostfixNotation(removeMinus((parseFunctions(t) as Expr.Function).exprs)))
-            ) // maybe curry? ;)
+            Token.Functions.SQRT, Token.Functions.EXP -> parseFunctions(t)
             is Token.Operators.ADDITION, Token.Operators.SUBTRACTION, Token.Operators.MULTIPLICATION,
             Token.Operators.DIVISION -> parseOperator(t)
-            is Token.Symbols.LPAREN -> {
-                val a = (parseBracketedExpression() as Expr.Bracketed).exprs
-                val b = removeMinus(a)
-                val c = parseToPostfixNotation(b)
-                val d = evaluateBracketedExpression(c)
-                return parsePartialEquation(Expr.PartialEquation(d))
-                //Expr.PartialEquation(evaluateBracketedExpression(parseToPostfixNotation(removeMinus((parseBracketedExpression() as Expr.Bracketed).exprs))))
-            }
-            is Token.ControlTokens.EOF, Token.ControlTokens.SPLITTER -> null
+            is Token.Symbols.LPAREN -> parseBracketedExpression()
+            is Token.Symbols.EQUALS -> Expr.Equals
+            is Token.ControlTokens.SPLITTER -> Expr.Splitter
+            is Token.ControlTokens.EOF -> null
             else -> throw Exception("Unexpected Token $t!")
         }
     }
@@ -35,16 +28,11 @@ class Parser(private val tokens : Lexer) {
         else -> throw Exception("Unknown token: '$token'")
     }
 
-    private fun <A> parseNumberVariables(token: A): Expr = when {
-        token is Token.Literals.NUMBER_LIT && tokens.peek() is Token.Literals.VARIABLE_LIT -> Expr.Variable(
-            token.n, (tokens.next() as Token.Literals.VARIABLE_LIT).c
-        )
-        token is Token.Literals.VARIABLE_LIT && tokens.peek() is Token.Literals.NUMBER_LIT -> Expr.Variable(
-            (tokens.next() as Token.Literals.NUMBER_LIT).n, token.c
-        )
-        token is Token.Literals.NUMBER_LIT -> parseNumbers(token)
-        token is Token.Literals.VARIABLE_LIT -> parseVariables(token)
-        else -> throw Exception("Unknown token: '$token'")
+    private fun parseConstants(token: Token) : Expr{
+        return when (token){
+            is Token.Constants.PI -> Expr.Number(Math.PI)
+            else -> throw Exception("Unknown Constant '$token'!")
+        }
     }
 
     private inline fun <reified A> parseFunctions(token: A): Expr {
@@ -52,6 +40,16 @@ class Parser(private val tokens : Lexer) {
         val body = iterateTokensTillRightParenthesis()
         expectNext<Token.Symbols.RPAREN>()
         return Expr.Function(token.toString(), body)
+    }
+
+    private fun parseOperator(token: Token): Expr? {
+        return when (token) {
+            is Token.Operators.ADDITION -> Expr.Addition()
+            is Token.Operators.SUBTRACTION -> Expr.Subtraction()
+            is Token.Operators.MULTIPLICATION -> Expr.Multiplication()
+            is Token.Operators.DIVISION -> Expr.Division()
+            else -> null
+        }
     }
 
     private fun parseBracketedExpression(): Expr {
@@ -69,18 +67,12 @@ class Parser(private val tokens : Lexer) {
         return body
     }
 
-    private fun parseVariables(t: Token.Literals.VARIABLE_LIT): Expr = Expr.Variable(1.0, t.c)
-
-    private fun parseNumbers(t: Token.Literals.NUMBER_LIT): Expr = Expr.Number(t.n)
-
-    private fun parseOperator(token: Token): Expr? {
-        return when (token) {
-            is Token.Operators.ADDITION -> Expr.Addition()
-            is Token.Operators.SUBTRACTION -> Expr.Subtraction()
-            is Token.Operators.MULTIPLICATION -> Expr.Multiplication()
-            is Token.Operators.DIVISION -> Expr.Division()
-            else -> null
+    private inline fun <reified A> expectNext(): A {
+        val next: Token = tokens.next()
+        if (next !is A) {
+            throw Exception("Unexpected token: $next")
         }
+        return next
     }
 
     private fun parseVariables(t: Token.Literals.VARIABLE_LIT): Expr = Expr.Variable(1.0, t.c)

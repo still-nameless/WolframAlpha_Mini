@@ -9,7 +9,6 @@ sealed class Expr {
     data class Function (val binder : String, val exprs: MutableList<Expr>) : Expr()
     data class Bracketed (val exprs: MutableList<Expr>) : Expr()
     data class Equation (val exprs: MutableList<Expr>) : Expr()
-    data class PartialEquation (val exprs : MutableList<Expr>) : Expr()
     open class Operators(val precedence: Int) : Expr() {
     }
 
