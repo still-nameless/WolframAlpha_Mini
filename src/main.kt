@@ -1,14 +1,25 @@
 fun main(){
-    val input1 : String = "(28x + 2y + 4 - 3 + sin(2 + 4) + (7y - 3x * 2))"
-    val input2 : String = "(-1 + 17 + 34x + 2z +4  + 54 + 8z)"
-    val input3 : String = "(-1x + 2y + 3z + 4a + 2)"
-    val input4 : String = "(cos(PI) * 7x + (2x))"
-    val input5 : String = "((1)*(2)(3) + 3y)"
-    val input6 : String = "(((1)*(2x + 2) + 3x) / (cos(PI) * 5 * (4)))" // Ey was ist hier los?
-    val input7 : String = "((2x + 2)/(2 * 1))"
-    testParser(input7)
+    /*
+    val x = mutableListOf<String>(
+    "28x + 2y + 4 - 3 + sin(2 + 4) + (7y - 3x * 2) = 3x - 3x + 5x",
+    "(-1 + 17 + 34x + 2z +4  + 54 + 8z)",
+    "(-1x + 2y + 3z + 4a + 2)",
+    "(7x + (2x) + (3x + 5x))",
+    "((1)*(2)*(3) + 3y*(3 + 2))",
+    "(((1)*(2x + 2) + 3x) / (cos(PI) * 5 * (4)))",
+    "((2x + 2)/(2 * 1))",
+    "(2 / (2x + 1))")
+    for (i in x){
+        testParser(i)
+    }
+     */
+    val input = "sqrt(4)/2 = 3x"
+    val evaluator = Evaluator()
+    evaluator.setUpEvaluation(input)
+    //testParser(input)
     //testGaussianAlgorithm()
 }
+
 
 fun testParser(input : String){
     println("Parsing: $input")

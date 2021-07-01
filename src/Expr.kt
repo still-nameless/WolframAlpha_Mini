@@ -19,4 +19,6 @@ sealed class Expr {
     class Division () : Operators(2)
 
     object Dummy : Expr()
+    object Equals : Expr()
+    object Splitter : Expr()
 }
