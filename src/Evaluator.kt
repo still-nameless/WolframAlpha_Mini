@@ -1,4 +1,5 @@
 import java.util.*
+import javax.swing.text.MutableAttributeSet
 import kotlin.math.*
 
 class Evaluator() {
@@ -9,8 +10,8 @@ class Evaluator() {
         val lexer = Lexer(input)
         val parser = Parser(lexer)
         var isLeftHandside = true
-        val leftHandsideEquation : MutableList<Expr> = mutableListOf()
-        val rightHandsideEquation : MutableList<Expr> = mutableListOf()
+        var leftHandsideEquation : MutableList<Expr> = mutableListOf()
+        var rightHandsideEquation : MutableList<Expr> = mutableListOf()
 
         while (true) {
             val x : Expr? = parser.parseExpr()
@@ -23,8 +24,8 @@ class Evaluator() {
             }
             else if (x is Expr.Splitter) {
                 equations.add(Pair(Expr.Equation(leftHandsideEquation),Expr.Equation(rightHandsideEquation)))
-                leftHandsideEquation.clear()
-                rightHandsideEquation.clear()
+                leftHandsideEquation = mutableListOf()
+                rightHandsideEquation = mutableListOf()
                 isLeftHandside = true
             }
             else {
@@ -39,34 +40,128 @@ class Evaluator() {
     // 7x -(3 * (3-2)) = 21
     // 1. RemoveMinus 2.
     private fun evaluate(){
+        var newEquation : Pair<Expr.Equation,Expr.Equation>
         for (equation in equations){
             val evalLeftEquation = evaluate(removeMinus(equation.first.exprs))
             val evalRightEquation = evaluate(removeMinus(equation.second.exprs))
-            evalLeftEquation.forEach { println(it) }
+            newEquation = seperateVariables(evalLeftEquation,evalRightEquation)
+            equations[equations.indexOf(equation)] = newEquation
         }
     }
 
-    //"sqrt(4)/2 = 3x"
     private fun evaluate(input : MutableList<Expr>) : MutableList<Expr>{
         val result : MutableList<Expr> = mutableListOf()
         if(input.size == 1 && input.first() is Expr.Number) return input
-        for (i in input.indices){
-            val element = input[i]
-            if (element is Expr.Bracketed){
-                val body = evaluate(removeMinus(element.exprs))
-                body.forEach { result.add(it) }
-                return evaluateEquation(toPostfixNotation(result))
+        for (expr in input) {
+            when (expr) {
+                is Expr.Bracketed -> {
+                    val body = evaluate(removeMinus(expr.exprs))
+                    body.forEach { result.add(it) }
+                }
+                is Expr.Function -> {
+                    val body = evaluate(removeMinus(expr.exprs))
+                    body.forEach { result.add(applyFunction(expr, it as Expr.Number)) }
+                }
+                else -> result.add(expr)
             }
-            else if (element is Expr.Function){
-                val body = evaluate(removeMinus(element.exprs))
-                body.forEach { result.add(it) }
-                return mutableListOf(applyFunction(element,result[0] as Expr.Number))
-            }
-            else
-                result.add(element)
-
         }
         return evaluateEquation(toPostfixNotation(result))
+    }
+
+    private fun seperateVariables(leftList : MutableList<Expr>, rightList : MutableList<Expr>) : Pair<Expr.Equation,Expr.Equation>{
+        var newPair : Pair<MutableList<Expr>,MutableList<Expr>> = Pair(mutableListOf(), mutableListOf())
+        var tempList : MutableList<Expr> = leftList
+        var index = 0
+        while (index < tempList.size){
+            when (tempList[index]){
+                is Expr.Number -> {
+                    newPair =  bringFromLeftToRight(leftList,rightList,tempList[index])
+                    tempList = newPair.first
+                    index = 0
+                }
+                else -> index++
+            }
+        }
+        index = 0
+        while (index < newPair.second.size){
+            when (newPair.second[index]){
+                is Expr.Variable -> {
+                    newPair = bringFromRightToLeft(newPair.first,newPair.second,newPair.second[index])
+                    index = 0
+                }
+                else -> index++
+            }
+        }
+        return Pair(Expr.Equation(newPair.first),Expr.Equation(newPair.second))
+    }
+
+    private fun bringFromLeftToRight(fromList : MutableList<Expr>, toList : MutableList<Expr>, expr : Expr) : Pair<MutableList<Expr>,MutableList<Expr>> {
+        var newLeft : MutableList<Expr> = mutableListOf()
+        var newRight : MutableList<Expr> = mutableListOf()
+        if (expr is Expr.Number){
+            fromList.add(Expr.Addition())
+            fromList.add(Expr.Number(-expr.number))
+            newLeft = evaluateEquation(toPostfixNotation(fromList))
+            if (toList.isNotEmpty()){
+                toList.add(Expr.Addition())
+                toList.add(Expr.Number(-expr.number))
+                newRight = evaluateEquation(toPostfixNotation(toList))
+            }
+        }
+        return Pair(filterZeroCoefficients(newLeft),filterZeroCoefficients(newRight))
+    }
+
+    private fun bringFromRightToLeft(fromList : MutableList<Expr>, toList : MutableList<Expr>, expr : Expr) : Pair<MutableList<Expr>,MutableList<Expr>> {
+        var newLeft : MutableList<Expr> = mutableListOf()
+        var newRight : MutableList<Expr> = mutableListOf()
+        if (expr is Expr.Variable){
+            fromList.add(Expr.Addition())
+            fromList.add(Expr.Variable(-expr.number,expr.name))
+            newLeft = evaluateEquation(toPostfixNotation(fromList))
+            if (toList.isNotEmpty()){
+                toList.add(Expr.Addition())
+                toList.add(Expr.Variable(-expr.number,expr.name))
+                newRight = evaluateEquation(toPostfixNotation(toList))
+            }
+        }
+        return Pair(filterZeroCoefficients(newLeft),filterZeroCoefficients(newRight))
+    }
+
+    private fun filterZeroCoefficients(input: MutableList<Expr>) : MutableList<Expr>{
+        var index = 0
+        while (index < input.size){
+            when (val element = input[index]){
+                is Expr.Number -> {
+                    if (element.number == 0.0 && index != input.size-1) {
+                        repeat(2){
+                            input.removeAt(index)
+                        }
+                    }
+                    else if (element.number == 0.0) {
+                        repeat(2){
+                            input.removeAt(input.size-1)
+                        }
+                    }
+                    else
+                        index++
+                }
+                is Expr.Variable -> {
+                    if (element.number == 0.0 && index != input.size-1) {
+                        repeat(2){
+                            input.removeAt(index)
+                        }
+                    }
+                    else if (element.number == 0.0){
+                        repeat(2){
+                            input.removeAt(input.size-1)
+                        }
+                    }
+                    else index++
+                }
+                else -> index++
+            }
+        }
+        return input
     }
 
     private fun applyFunction(function: Expr.Function, expr: Expr.Number): Expr.Number {

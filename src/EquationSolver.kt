@@ -4,7 +4,7 @@ import kotlin.math.abs
 class EquationSolver() {
     private val epsilon : Double = 1e-15
 
-    fun performGaussianElimination(matrix : Array<Array<Double>>, solutions : Array<Double>) : Array<Double> {
+    fun performGaussianElimination(matrix : Array<DoubleArray>, solutions : DoubleArray) : DoubleArray {
         val n : Int = solutions.size
 
         for (i : Int in 0 until n){
@@ -30,7 +30,7 @@ class EquationSolver() {
             }
         }
 
-        val solutionVector : Array<Double>  = Array(n){0.0}
+        val solutionVector : DoubleArray  = DoubleArray(n)
         for (i : Int in n - 1 downTo 0){
             var sum : Double = 0.0
             for (j : Int in i + 1 until n){
@@ -41,13 +41,13 @@ class EquationSolver() {
         return solutionVector
     }
 
-    private fun swap2D(matrix : Array<Array<Double>>, i : Int , j : Int){
-        val temp : Array<Double> = matrix[i]
+    private fun swap2D(matrix : Array<DoubleArray>, i : Int , j : Int){
+        val temp : DoubleArray = matrix[i]
         matrix[i] = matrix[j]
         matrix[j] = temp
     }
 
-    private fun swap1D(matrix: Array<Double>, i : Int, j : Int){
+    private fun swap1D(matrix: DoubleArray, i : Int, j : Int){
         val temp : Double = matrix[i]
         matrix[i] = matrix[j]
         matrix[j] = temp
