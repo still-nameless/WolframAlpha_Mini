@@ -36,9 +36,6 @@ class Evaluator() {
         evaluate()
     }
 
-
-    // 7x -(3 * (3-2)) = 21
-    // 1. RemoveMinus 2.
     private fun evaluate(){
         var newEquation : Pair<Expr.Equation,Expr.Equation>
         for (equation in equations){
@@ -69,7 +66,7 @@ class Evaluator() {
     }
 
     private fun seperateVariables(leftList : MutableList<Expr>, rightList : MutableList<Expr>) : Pair<Expr.Equation,Expr.Equation>{
-        var newPair : Pair<MutableList<Expr>,MutableList<Expr>> = Pair(mutableListOf(), mutableListOf())
+        var newPair : Pair<MutableList<Expr>,MutableList<Expr>> = Pair(leftList, rightList)
         var tempList : MutableList<Expr> = leftList
         var index = 0
         while (index < tempList.size){

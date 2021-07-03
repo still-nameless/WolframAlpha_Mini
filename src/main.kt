@@ -18,7 +18,7 @@ fun main(){
     //val input = "(2x + 2)/(2 * 1) = 3x" Hier müssen nochmal Partial Equations benutzt werden
 
     //val input = "7 * (3*2-1) + 2x + 0*y = 5x + 65"
-    val input = "28x + 2 + 4 - 3 + sin(2 + 4) + (7 - 3x * 2) = 3x - 3x + 5x"
+    val input = "x + y = 1, 2x + 4y = 4"
     val evaluator = Evaluator()
     evaluator.setUpEvaluation(input)
     val n = evaluator.equations.size
@@ -27,8 +27,12 @@ fun main(){
     val solutions = DoubleArray(n)
 
     for (i in 0 until n){
-        for (j in 0 until n){
-            matrix[i][j] = (evaluator.equations[i].first.exprs[j] as Expr.Variable).number
+        for (j in 0 until evaluator.equations[i].first.exprs.size){
+            val element = evaluator.equations[i].first.exprs[j]
+            if (element is Expr.Variable)
+                matrix[i][j] = element.number
+            else
+                continue
         }
         solutions[i] = (evaluator.equations[i].second.exprs[0] as Expr.Number).number
     }
