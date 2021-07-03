@@ -20,7 +20,7 @@ fun main(){
     //val input = "7 * (3*2-1) + 2x + 0*y = 5x + 65"
     val input = "x + y = 1, 2x + 4y = 4"
     val evaluator = Evaluator()
-    evaluator.setUpEvaluation(input)
+    evaluator.evaluate(input)
     val n = evaluator.equations.size
     val EQS = EquationSolver()
     val matrix = Array(n) { DoubleArray(n) }

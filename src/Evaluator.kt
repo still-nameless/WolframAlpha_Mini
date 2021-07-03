@@ -33,10 +33,10 @@ class Evaluator() {
                 break
             }
         }
-        evaluate()
     }
 
-    private fun evaluate(){
+    fun evaluate(input : String){
+        setUpEvaluation(input)
         var newEquation : Pair<Expr.Equation,Expr.Equation>
         for (equation in equations){
             val evalLeftEquation = evaluate(removeMinus(equation.first.exprs))
@@ -245,7 +245,7 @@ class Evaluator() {
 
     private fun isFactorBehindBrackets(list : MutableList<Expr>, index : Int) : Boolean {
         if (list.size < 3) return false
-        return index < list.size - 2 && (list[index+1] is Expr.Multiplication || list[index+1] is Expr.Division) && (list[index+2] is Expr.Number || list[index+2] is Expr.Variable)
+        return index < list.size - 2 && (list[index+1] is Expr.Multiplication || list[index+1] is Expr.Division) && (list[index+2] is Expr.Number || list[index+2] is Expr.Variable || list[index+2] is Expr.Bracketed)
     }
 
     private fun multiplyOutBracket(input : MutableList<Expr>, index : Int) : MutableList<Expr>{
