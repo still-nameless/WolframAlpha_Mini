@@ -14,11 +14,7 @@ fun main(){
     }
      */
 
-    // Klammern werden einfach aufgelöst => 2x + 1 = 3x, einfach falsch
-    //val input = "(2x + 2)/(2 * 1) = 3x" Hier müssen nochmal Partial Equations benutzt werden
-
-    //val input = "7 * (3*2-1) + 2x + 0*y = 5x + 65"
-    val input = "x + y = 1, 2x + 4y = 4"
+    val input = "a - 5b + 4c + d= 7, 2a + b -3c -d = 1, 3a - 4b + c - 5d = 0, a + b + c + d = 1"
     val evaluator = Evaluator()
     evaluator.evaluate(input)
     val n = evaluator.equations.size
@@ -27,10 +23,11 @@ fun main(){
     val solutions = DoubleArray(n)
 
     for (i in 0 until n){
+        var index = 0
         for (j in 0 until evaluator.equations[i].first.exprs.size){
             val element = evaluator.equations[i].first.exprs[j]
             if (element is Expr.Variable)
-                matrix[i][j] = element.number
+                matrix[i][index++] = element.number
             else
                 continue
         }
@@ -38,9 +35,7 @@ fun main(){
     }
     val solutionVector = EQS.performGaussianElimination(matrix,solutions)
 
-    solutionVector.forEach { println(it) }
-    //testParser(input)
-    //testGaussianAlgorithm()
+    solutionVector.forEach { println(String.format("%.3f",it)) }
 }
 
 
