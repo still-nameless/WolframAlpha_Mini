@@ -15,6 +15,7 @@ fun main(){
      */
 
     val input = "a - 5b + 4c + d= 7, 2a + b -3c -d = 1, 3a - 4b + c - 5d = 0, a + b + c + d = 1"
+    val input2 = "a = sin( 4 * (3+9 / sqrt(4)) - 3*9 + cos(24/2) + 23 * tan(17) + PI*5)"
     val evaluator = Evaluator()
     evaluator.evaluate(input)
     val n = evaluator.equations.size

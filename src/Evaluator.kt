@@ -1,5 +1,4 @@
 import java.util.*
-import javax.swing.text.MutableAttributeSet
 import kotlin.math.*
 
 class Evaluator() {
@@ -41,7 +40,7 @@ class Evaluator() {
         for (equation in equations){
             val evalLeftEquation = evaluate(removeMinus(equation.first.exprs))
             val evalRightEquation = evaluate(removeMinus(equation.second.exprs))
-            newEquation = seperateVariables(evalLeftEquation,evalRightEquation)
+            newEquation = separateVariables(evalLeftEquation,evalRightEquation)
             sortByVariableName(newEquation.first.exprs)
             equations[equations.indexOf(equation)] = newEquation
         }
@@ -71,7 +70,7 @@ class Evaluator() {
         return Expr.Bracketed(input)
     }
 
-    private fun seperateVariables(leftList : MutableList<Expr>, rightList : MutableList<Expr>) : Pair<Expr.Equation,Expr.Equation>{
+    private fun separateVariables(leftList : MutableList<Expr>, rightList : MutableList<Expr>) : Pair<Expr.Equation,Expr.Equation>{
         var newPair : Pair<MutableList<Expr>,MutableList<Expr>> = Pair(leftList, rightList)
         var tempList : MutableList<Expr> = leftList
         var index = 0
@@ -135,36 +134,32 @@ class Evaluator() {
         while (index < input.size){
             when (val element = input[index]){
                 is Expr.Number -> {
-                    if (element.number == 0.0 && index != input.size-1) {
-                        repeat(2){
-                            input.removeAt(index)
-                        }
-                    }
-                    else if (element.number == 0.0) {
-                        repeat(2){
-                            input.removeAt(input.size-1)
-                        }
-                    }
-                    else
-                        index++
+                    index = removeZero(element.number, input, index)
                 }
                 is Expr.Variable -> {
-                    if (element.number == 0.0 && index != input.size-1) {
-                        repeat(2){
-                            input.removeAt(index)
-                        }
-                    }
-                    else if (element.number == 0.0){
-                        repeat(2){
-                            input.removeAt(input.size-1)
-                        }
-                    }
-                    else index++
+                    index = removeZero(element.number, input, index)
                 }
                 else -> index++
             }
         }
         return input
+    }
+
+    private fun removeZero(number : Double, input: MutableList<Expr>, index : Int) : Int {
+        return if (number == 0.0 && index != input.size-1) {
+            repeat(2){
+                input.removeAt(index)
+            }
+            index
+        }
+        else if (number == 0.0) {
+            repeat(2){
+                input.removeAt(input.size-1)
+            }
+            index
+        }
+        else
+            index + 1
     }
 
     private fun sortByVariableName(input : MutableList<Expr>){
@@ -372,7 +367,7 @@ class Evaluator() {
                     numberStack.push(Expr.Dummy)
                     variableStack.push(expr)
                 }
-                is Expr.Operators -> {
+                is Expr.Operator -> {
                     operatorStack.push(expr)
                     val op2 = numberStack.pop()
                     val op1 = numberStack.pop()
@@ -470,7 +465,7 @@ class Evaluator() {
      */
     private fun <A, B> comparePrecedenceOfOperators(op1: A, op2: B): Int {
         if (op2 == null) return Int.MIN_VALUE
-        if (op1 is Expr.Operators && op2 is Expr.Operators) {
+        if (op1 is Expr.Operator && op2 is Expr.Operator) {
             return op1.precedence.compareTo(op2.precedence)
         } else
             throw Exception("Mashalla falsches Token diese hehe")
