@@ -63,7 +63,7 @@ class Lexer(input: String) {
             "PI","Pi","pi" -> Token.Constants.PI
             else -> when(result.length) {
                 1 -> Token.Literals.VARIABLE_LIT(result.single())
-                else -> throw Exception("Unknown Expression '${result}'")
+                else -> throw Exception("Unknown Function or Constant: '${result}'")
             }
         }
     }

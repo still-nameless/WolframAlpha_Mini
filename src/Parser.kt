@@ -12,7 +12,7 @@ class Parser(private val tokens : Lexer) {
             is Token.Symbols.EQUALS -> Expr.Equals
             is Token.ControlTokens.SPLITTER -> Expr.Splitter
             is Token.ControlTokens.EOF -> null
-            else -> throw Exception("Unexpected Token $t!")
+            else -> throw Exception("Unexpected Token: '$t'!")
         }
     }
 
@@ -25,19 +25,19 @@ class Parser(private val tokens : Lexer) {
         )
         token is Token.Literals.NUMBER_LIT -> parseNumbers(token)
         token is Token.Literals.VARIABLE_LIT -> parseVariables(token)
-        else -> throw Exception("Unknown token: '$token'")
+        else -> throw Exception("Unknown token: '$token'!")
     }
 
     private fun parseConstants(token: Token) : Expr{
         return when (token){
             is Token.Constants.PI -> Expr.Number(Math.PI)
-            else -> throw Exception("Unknown Constant '$token'!")
+            else -> throw Exception("Unknown Constant: '$token'!")
         }
     }
 
-    private inline fun <reified A> parseFunctions(token: A): Expr {
+    private fun parseFunctions(token: Token): Expr {
         expectNext<Token.Symbols.LPAREN>()
-        val body = iterateTokensTillRightParenthesis()
+        val body : MutableList<Expr> = iterateTokensTillRightParenthesis()
         expectNext<Token.Symbols.RPAREN>()
         return Expr.Function(token.toString(), body)
     }
@@ -48,12 +48,12 @@ class Parser(private val tokens : Lexer) {
             is Token.Operators.SUBTRACTION -> Expr.Subtraction()
             is Token.Operators.MULTIPLICATION -> Expr.Multiplication()
             is Token.Operators.DIVISION -> Expr.Division()
-            else -> null
+            else -> throw Exception("Unknown token: '$token'!")
         }
     }
 
     private fun parseBracketedExpression(): Expr {
-        val body = iterateTokensTillRightParenthesis()
+        val body : MutableList<Expr> = iterateTokensTillRightParenthesis()
         expectNext<Token.Symbols.RPAREN>()
         return Expr.Bracketed(body)
     }
@@ -70,7 +70,7 @@ class Parser(private val tokens : Lexer) {
     private inline fun <reified A> expectNext(): A {
         val next: Token = tokens.next()
         if (next !is A) {
-            throw Exception("Unexpected token: $next")
+            throw Exception("Unexpected token: '$next'!")
         }
         return next
     }

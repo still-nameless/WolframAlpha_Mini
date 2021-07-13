@@ -131,6 +131,14 @@ class Evaluator() {
 
     private fun filterZeroCoefficients(input: MutableList<Expr>) : MutableList<Expr>{
         var index = 0
+        if (input.size == 1){
+            when (val expr = input[0]){
+                is Expr.Number -> { if (expr.number == 0.0) return mutableListOf(Expr.Number(0.0)) }
+                is Expr.Variable -> { if (expr.number == 0.0) return mutableListOf(Expr.Number(0.0)) }
+                else -> return input
+            }
+        }
+
         while (index < input.size){
             when (val element = input[index]){
                 is Expr.Number -> {
@@ -186,7 +194,7 @@ class Evaluator() {
             "SQRT" -> Expr.Number(sqrt(expr.number))
             "LOG"  -> Expr.Number(ln(expr.number))
             "EXP"  -> Expr.Number(exp(expr.number))
-            else -> throw Exception("Applying '$function' - function failed!")
+            else -> throw Exception("Applying unknown '$function' failed!")
         }
     }
 
@@ -194,22 +202,16 @@ class Evaluator() {
         val newEquation : MutableList<Expr> = mutableListOf()
         var i = 0
         while (i < list.size) {
-            if (i == 0) {
-                if (list[i] is Expr.Subtraction) {
-                    newEquation.add(Expr.Number(-1.0))
-                    newEquation.add(Expr.Multiplication())
-                    i++
-                }
+            if (i == 0 && list[i] is Expr.Subtraction) {
+                newEquation.add(Expr.Number(-1.0))
+                newEquation.add(Expr.Multiplication())
+                i++
             }
-            else {
-                if (list[i] is Expr.Subtraction) {
-                    if (list[i-1] is Expr.Number || list[i-1] is Expr.Variable) {
-                        newEquation.add(Expr.Addition())
-                        newEquation.add(Expr.Number(-1.0))
-                        newEquation.add(Expr.Multiplication())
-                        i++
-                    }
-                }
+            else if (list[i] is Expr.Subtraction){
+                newEquation.add(Expr.Addition())
+                newEquation.add(Expr.Number(-1.0))
+                newEquation.add(Expr.Multiplication())
+                i++
             }
             newEquation.add(list[i])
             i++
@@ -257,35 +259,39 @@ class Evaluator() {
 
     private fun isFactorInFrontBrackets(list : MutableList<Expr>, index : Int) :Boolean {
         if (list.size < 3) return false
-        return index > 1 && (list[index-1] is Expr.Multiplication || list[index-1] is Expr.Division) && (list[index-2] is Expr.Number || list[index-2] is Expr.Variable || list[index-2] is Expr.Bracketed)
+        return index > 1 && (list[index-1] is Expr.Multiplication || list[index-1] is Expr.Division)
+                && (list[index-2] is Expr.Number || list[index-2] is Expr.Variable || list[index-2] is Expr.Bracketed)
     }
 
     private fun isFactorBehindBrackets(list : MutableList<Expr>, index : Int) : Boolean {
         if (list.size < 3) return false
-        return index < list.size - 2 && (list[index+1] is Expr.Multiplication || list[index+1] is Expr.Division) && (list[index+2] is Expr.Number || list[index+2] is Expr.Variable || list[index+2] is Expr.Bracketed)
+        return index < list.size - 2 && (list[index+1] is Expr.Multiplication || list[index+1] is Expr.Division)
+                && (list[index+2] is Expr.Number || list[index+2] is Expr.Variable || list[index+2] is Expr.Bracketed)
     }
 
     private fun multiplyOutBracket(input : MutableList<Expr>, index : Int) : MutableList<Expr>{
         if (input.size <= 2) {
             return (input[0] as Expr.Bracketed).exprs
         }
-        if (isFactorInFrontBrackets(input,index)){
-            return createResultList(input,index,-2,-2,1,input[index -1])
-        }
-        else if (isFactorBehindBrackets(input,index)) {
-            return createResultList(input, index, 2, 0, 3,input[index+1])
-        }
-        else{
-            val result : MutableList<Expr> = mutableListOf()
-            val expr : Expr = input[index]
-            input.subList(0,index).forEach { result.add(it) }
-            if (expr is Expr.Bracketed) {
-                for (i in 0 until expr.exprs.size) {
-                    result.add(expr.exprs[i])
-                }
+        when {
+            isFactorInFrontBrackets(input,index) -> {
+                return createResultList(input,index,-2,-2,1,input[index -1])
             }
-            input.subList(index+1,input.size).forEach { result.add(it) }
-            return result
+            isFactorBehindBrackets(input,index) -> {
+                return createResultList(input, index, 2, 0, 3,input[index+1])
+            }
+            else -> {
+                val result : MutableList<Expr> = mutableListOf()
+                val expr : Expr = input[index]
+                input.subList(0,index).forEach { result.add(it) }
+                if (expr is Expr.Bracketed) {
+                    for (i in 0 until expr.exprs.size) {
+                        result.add(expr.exprs[i])
+                    }
+                }
+                input.subList(index+1,input.size).forEach { result.add(it) }
+                return result
+            }
         }
     }
 
@@ -302,9 +308,9 @@ class Evaluator() {
         for (expr in (input[index] as Expr.Bracketed).exprs){
             if (expr is Expr.Variable || expr is Expr.Number){
                 if (operator is Expr.Multiplication || operator is Expr.Division && offSet > 0)
-                    output.add(executeOperationWithVariables(expr, input[index+offSet], operator))
+                    output.add(operationWithVariables(expr, input[index+offSet], operator))
                 else
-                    output.add(executeOperationWithVariables(input[index+offSet], expr, operator))
+                    output.add(operationWithVariables(input[index+offSet], expr, operator))
                 output.add(Expr.Addition())
             }
         }
@@ -312,7 +318,7 @@ class Evaluator() {
         return output
     }
 
-    private fun executeOperationWithVariables(op1 : Expr, op2 : Expr, op : Expr, variableStack: Stack<Expr>? = null) : Expr {
+    private fun operationWithVariables(op1 : Expr, op2 : Expr, op : Expr, variableStack: Stack<Expr>? = null) : Expr {
         var operand1 : Expr = op1
         var operand2 : Expr = op2
         if (op2 is Expr.Dummy && variableStack != null)
@@ -331,8 +337,7 @@ class Evaluator() {
         if(operand1 is Expr.Number && operand2 is Expr.Variable) {
             return when (op){
                 is Expr.Multiplication -> Expr.Variable(operand1.number * operand2.number, operand2.name)
-                //is Expr.Division -> Expr.Variable(operand1.number / operand2.number, operand2.name)
-                else -> throw Exception("ja das ist einfach keine lineare equation oder? - marc")
+                else -> throw Exception("This is not a linear equation: (${operand1.number} / ${operand2.number}${operand2.name})")
             }
         }
         else if(operand1 is Expr.Variable && operand2 is Expr.Number){
@@ -374,17 +379,19 @@ class Evaluator() {
 
                     if ((op1 is Expr.Dummy || op2 is Expr.Dummy) && (expr is Expr.Addition || expr is Expr.Subtraction)) {
                         if (op2 is Expr.Dummy) {
-                            makeDummiesGreatAgain(op1,variableStack,numberStack,output)
+                            replaceDummies(op1,variableStack,numberStack,output)
                         }
                         else {
-                            makeDummiesGreatAgain(op2,variableStack,numberStack,output)
+                            replaceDummies(op2,variableStack,numberStack,output)
                         }
                     }
                     else if (op1 is Expr.Dummy && op2 is Expr.Dummy && expr is Expr.Multiplication){
-                        throw Exception("This is not a linear equation!")
+                        val variable1 = variableStack.pop() as Expr.Variable
+                        val variable2 = variableStack.pop() as Expr.Variable
+                        throw Exception("This is not a linear equation: (${variable1.number}${variable1.name} * ${variable2.number}${variable2.name})")
                     }
                     else if ((op1 is Expr.Dummy || op2 is Expr.Dummy) && (expr is Expr.Multiplication || expr is Expr.Division)){
-                        val res = executeOperationWithVariables(op1, op2, expr, variableStack)
+                        val res = operationWithVariables(op1, op2, expr, variableStack)
                         if (res is Expr.Number) numberStack.push(res)
                         else {
                             numberStack.push(Expr.Dummy)
@@ -392,10 +399,10 @@ class Evaluator() {
                         }
                     }
                     else {
-                        numberStack.push(executeOperationWithVariables(op1, op2, expr))
+                        numberStack.push(operationWithVariables(op1, op2, expr))
                     }
                 }
-                else -> throw Exception("Something went terribly wrong!")
+                else -> throw Exception("Some Expressions could not be evaluated!")
             }
         }
         if (numberStack.isNotEmpty() && numberStack.peek() !is Expr.Dummy)
@@ -405,6 +412,18 @@ class Evaluator() {
         else if (variableStack.peek() != null)
             output.add(variableStack.pop())
         return sumpUpVariables(output)
+    }
+
+    private fun replaceDummies(operand : Expr, variableStack: Stack<Expr>, numberStack: Stack<Expr>, output: MutableList<Expr>) {
+        repeat(variableStack.size){
+            val op1 = variableStack.pop()
+            output.add(op1)
+            output.add(Expr.Addition())
+        }
+        if (operand is Expr.Number)
+            numberStack.push(operand)
+        else if (operand is Expr.Dummy)
+            numberStack.add(Expr.Dummy)
     }
 
     private fun sumpUpVariables(list : MutableList<Expr>) : MutableList<Expr> {
@@ -446,28 +465,11 @@ class Evaluator() {
         return output
     }
 
-    private fun makeDummiesGreatAgain(operand : Expr, variableStack: Stack<Expr>, numberStack: Stack<Expr>, output: MutableList<Expr>) {
-        repeat(variableStack.size){
-            val op1 = variableStack.pop()
-            output.add(op1)
-            output.add(Expr.Addition())
-        }
-        if (operand is Expr.Number)
-            numberStack.push(operand)
-        else if (operand is Expr.Dummy)
-            numberStack.add(Expr.Dummy)
-    }
-
-    /**
-     *     0 -> precedences are equal
-     *     1 -> precedence of operator1 is greater than precedence of operator2
-     *    -1 -> precedence of operator2 is greater than precedence of operator1
-     */
     private fun <A, B> comparePrecedenceOfOperators(op1: A, op2: B): Int {
         if (op2 == null) return Int.MIN_VALUE
         if (op1 is Expr.Operator && op2 is Expr.Operator) {
             return op1.precedence.compareTo(op2.precedence)
         } else
-            throw Exception("Mashalla falsches Token diese hehe")
+            throw Exception("Can not compare operator $op1 with $op2!")
     }
 }

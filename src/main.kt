@@ -14,7 +14,8 @@ fun main(){
     }
      */
 
-    val input = "a - 5b + 4c + d= 7, 2a + b -3c -d = 1, 3a - 4b + c - 5d = 0, a + b + c + d = 1"
+    val input = "-(2x)- 5 = 2"
+    //val input = "5x - y - z - 1 = 4x + 3y -z, 3x - z - 1 = 5x + 2y + 5z + 1, 2z - 2*(y-3x) - 5 = -5x - 3"
     val input2 = "a = sin( 4 * (3+9 / sqrt(4)) - 3*9 + cos(24/2) + 23 * tan(17) + PI*5)"
     val evaluator = Evaluator()
     evaluator.evaluate(input)
