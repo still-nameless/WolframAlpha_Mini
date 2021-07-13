@@ -42,7 +42,7 @@ class Parser(private val tokens : Lexer) {
         return Expr.Function(token.toString(), body)
     }
 
-    private fun parseOperator(token: Token): Expr? {
+    private fun parseOperator(token: Token): Expr {
         return when (token) {
             is Token.Operators.ADDITION -> Expr.Addition()
             is Token.Operators.SUBTRACTION -> Expr.Subtraction()

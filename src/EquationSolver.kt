@@ -64,9 +64,9 @@ class EquationSolver() {
             }
         }
 
-        val solutionVector : DoubleArray  = DoubleArray(n)
+        val solutionVector = DoubleArray(n)
         for (i : Int in n - 1 downTo 0){
-            var sum : Double = 0.0
+            var sum = 0.0
             for (j : Int in i + 1 until n){
                 sum += matrix[i][j] * solutionVector[j]
             }
@@ -85,5 +85,13 @@ class EquationSolver() {
         val temp : Double = matrix[i]
         matrix[i] = matrix[j]
         matrix[j] = temp
+    }
+
+    private fun getAllVariables(equations: MutableList<Pair<Expr.Equation, Expr.Equation>>) : MutableList<Char>{
+        val variableList : MutableList<Char> = mutableListOf()
+        equations.forEach{ it ->
+            it.first.exprs.filterIsInstance<Expr.Variable>().forEach { variableList.add(it.name) }
+        }
+        return variableList
     }
 }

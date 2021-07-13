@@ -94,7 +94,7 @@ class Evaluator() {
                 else -> index++
             }
         }
-        return Pair(Expr.Equation(newPair.first),Expr.Equation(newPair.second))
+        return Pair(Expr.Equation(filterZeroCoefficients(newPair.first)),Expr.Equation(filterZeroCoefficients(newPair.second)))
     }
 
     private fun bringFromLeftToRight(fromList : MutableList<Expr>, toList : MutableList<Expr>, expr : Expr) : Pair<MutableList<Expr>,MutableList<Expr>> {
@@ -348,11 +348,11 @@ class Evaluator() {
             }
         }
         else if(operand1 is Expr.Variable && operand2 is Expr.Variable && operand1.name == operand2.name){
-            if (op is Expr.Division) {
+            if (op is Expr.Division && operand1.number == operand2.number) {
                 return Expr.Number(operand1.number / operand2.number)
             }
             else
-                throw Exception("Illegal operator: '$op'!")
+                throw Exception("This is not a linear equation: (${operand1.number}${operand1.name} / ${operand2.number}${operand2.name})")
         }
         else throw Exception("This is not a linear equation!")
     }

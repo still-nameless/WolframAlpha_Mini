@@ -10,34 +10,3 @@ fun main(){
 
     testCases.forEach { EquationSolver().solveEquation(it) }
 }
-
-
-fun testParser(input : String){
-    println("Parsing: $input")
-    val lexer = Lexer(input)
-    val parser = Parser(lexer)
-    while (true){
-        val x : Expr? = parser.parseExpr()
-        if (x != null)
-            println(x)
-        else
-            break
-    }
-    println("fertig")
-}
-
-fun testParser2(input : String){
-    println("Parsing: $input")
-    val res = mutableListOf<Expr>()
-    val lexer = Lexer(input)
-    val parser = Parser(lexer)
-    while (true){
-        val x : Expr? = parser.parseExpr()
-        if (x != null)
-            res.add(x)
-        else
-            break
-    }
-
-    println("fertig")
-}
