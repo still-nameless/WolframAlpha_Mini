@@ -2,9 +2,43 @@ import java.lang.Exception
 import kotlin.math.abs
 
 class EquationSolver() {
+
     private val epsilon : Double = 1e-15
 
-    fun performGaussianElimination(matrix : Array<DoubleArray>, solutions : DoubleArray) : DoubleArray {
+    fun solveEquation(input : String){
+        val evaluator = Evaluator()
+        evaluator.evaluate(input)
+
+        val n = evaluator.equations.size
+        val matrix = Array(n) { DoubleArray(n) }
+        val solutions = DoubleArray(n)
+        val variableList = getAllVariables(evaluator.equations).distinct()
+        if (variableList.size > evaluator.equations.size) throw Exception("Can not solve linear system of equations with " +
+                "${variableList.size} variables and only ${evaluator.equations.size} equations!")
+
+        for (i in 0 until n){
+            var index = 0
+            for (j in 0 until evaluator.equations[i].first.exprs.size){
+                val element = evaluator.equations[i].first.exprs[j]
+                if (element is Expr.Variable)
+                    matrix[i][index++] = element.number
+                else
+                    continue
+            }
+            solutions[i] = (evaluator.equations[i].second.exprs[0] as Expr.Number).number
+        }
+        printSolution(performGaussianElimination(matrix,solutions),evaluator.equations)
+    }
+
+    private fun printSolution(solutionVector : DoubleArray, equations : MutableList<Pair<Expr.Equation,Expr.Equation>>) {
+        val variableList = getAllVariables(equations).distinct()
+        println("Lösungen für das Gleichungssystem lauten:")
+        for (i in variableList.indices){
+            println("${variableList[i]}: ${String.format("%.2f",solutionVector[i])}")
+        }
+    }
+
+    private fun performGaussianElimination(matrix : Array<DoubleArray>, solutions : DoubleArray) : DoubleArray {
         val n : Int = solutions.size
 
         for (i : Int in 0 until n){
