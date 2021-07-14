@@ -1,34 +1,34 @@
 import java.util.*
 import kotlin.math.*
 
-class Evaluator() {
+class Evaluator {
 
     val equations : MutableList<Pair<Expr.Equation,Expr.Equation>> = mutableListOf()
 
     private fun setUpEvaluation(input: String) {
         val lexer = Lexer(input)
         val parser = Parser(lexer)
-        var isLeftHandside = true
-        var leftHandsideEquation : MutableList<Expr> = mutableListOf()
-        var rightHandsideEquation : MutableList<Expr> = mutableListOf()
+        var isLeftHandSide = true
+        var leftHandSideEquation : MutableList<Expr> = mutableListOf()
+        var rightHandSideEquation : MutableList<Expr> = mutableListOf()
 
         while (true) {
             val x : Expr? = parser.parseExpr()
             if(x != null && x !is Expr.Splitter) {
-                if (x == Expr.Equals) isLeftHandside = false
-                else if (isLeftHandside)
-                    leftHandsideEquation.add(x)
-                else
-                    rightHandsideEquation.add(x)
+                when {
+                    x == Expr.Equals -> isLeftHandSide = false
+                    isLeftHandSide -> leftHandSideEquation.add(x)
+                    else -> rightHandSideEquation.add(x)
+                }
             }
             else if (x is Expr.Splitter) {
-                equations.add(Pair(Expr.Equation(leftHandsideEquation),Expr.Equation(rightHandsideEquation)))
-                leftHandsideEquation = mutableListOf()
-                rightHandsideEquation = mutableListOf()
-                isLeftHandside = true
+                equations.add(Pair(Expr.Equation(leftHandSideEquation),Expr.Equation(rightHandSideEquation)))
+                leftHandSideEquation = mutableListOf()
+                rightHandSideEquation = mutableListOf()
+                isLeftHandSide = true
             }
             else {
-                equations.add(Pair(Expr.Equation(leftHandsideEquation),Expr.Equation(rightHandsideEquation)))
+                equations.add(Pair(Expr.Equation(leftHandSideEquation),Expr.Equation(rightHandSideEquation)))
                 break
             }
         }
@@ -38,10 +38,10 @@ class Evaluator() {
         setUpEvaluation(input)
         var newEquation : Pair<Expr.Equation,Expr.Equation>
         for (equation in equations){
-            val evalLeftEquation = evaluate(removeMinus(equation.first.exprs))
-            val evalRightEquation = evaluate(removeMinus(equation.second.exprs))
+            val evalLeftEquation = evaluate(removeMinus(equation.first.expressions))
+            val evalRightEquation = evaluate(removeMinus(equation.second.expressions))
             newEquation = separateVariables(evalLeftEquation,evalRightEquation)
-            sortByVariableName(newEquation.first.exprs)
+            sortByVariableName(newEquation.first.expressions)
             equations[equations.indexOf(equation)] = newEquation
         }
     }
@@ -52,11 +52,11 @@ class Evaluator() {
         for (expr in input) {
             when (expr) {
                 is Expr.Bracketed -> {
-                    val body = evaluate(removeMinus(expr.exprs))
+                    val body = evaluate(removeMinus(expr.expressions))
                     result.add(checkBracketed(body))
                 }
                 is Expr.Function -> {
-                    val body = evaluate(removeMinus(expr.exprs))
+                    val body = evaluate(removeMinus(expr.expressions))
                     body.forEach { result.add(applyFunction(expr, it as Expr.Number)) }
                 }
                 else -> result.add(expr)
@@ -187,7 +187,7 @@ class Evaluator() {
     }
 
     private fun applyFunction(function: Expr.Function, expr: Expr.Number): Expr.Number {
-        return when (function.binder.toUpperCase()) {
+        return when (function.binder.uppercase(Locale.getDefault())) {
             "SIN"  -> Expr.Number(sin(expr.number))
             "COS"  -> Expr.Number(cos(expr.number))
             "TAN"  -> Expr.Number(tan(expr.number))
@@ -246,7 +246,7 @@ class Evaluator() {
                 operatorStack.add(expr)
             }
             else if(expr is Expr.Function){
-                toPostfixNotation(expr.exprs).forEach { output.add(it) }
+                toPostfixNotation(expr.expressions).forEach { output.add(it) }
             }
             i++
         }
@@ -271,7 +271,7 @@ class Evaluator() {
 
     private fun multiplyOutBracket(input : MutableList<Expr>, index : Int) : MutableList<Expr>{
         if (input.size <= 2) {
-            return (input[0] as Expr.Bracketed).exprs
+            return (input[0] as Expr.Bracketed).expressions
         }
         when {
             isFactorInFrontBrackets(input,index) -> {
@@ -285,8 +285,8 @@ class Evaluator() {
                 val expr : Expr = input[index]
                 input.subList(0,index).forEach { result.add(it) }
                 if (expr is Expr.Bracketed) {
-                    for (i in 0 until expr.exprs.size) {
-                        result.add(expr.exprs[i])
+                    for (i in 0 until expr.expressions.size) {
+                        result.add(expr.expressions[i])
                     }
                 }
                 input.subList(index+1,input.size).forEach { result.add(it) }
@@ -305,7 +305,7 @@ class Evaluator() {
 
     private fun applyFactor(input : MutableList<Expr>, index : Int, offSet : Int, operator: Expr) : MutableList<Expr>{
         val output : MutableList<Expr> = mutableListOf()
-        for (expr in (input[index] as Expr.Bracketed).exprs){
+        for (expr in (input[index] as Expr.Bracketed).expressions){
             if (expr is Expr.Variable || expr is Expr.Number){
                 if (operator is Expr.Multiplication || operator is Expr.Division && offSet > 0)
                     output.add(operationWithVariables(expr, input[index+offSet], operator))
