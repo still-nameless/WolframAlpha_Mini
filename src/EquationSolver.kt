@@ -27,14 +27,45 @@ class EquationSolver() {
             }
             solutions[i] = (evaluator.equations[i].second.exprs[0] as Expr.Number).number
         }
-        printSolution(performGaussianElimination(matrix,solutions),evaluator.equations)
+        printSolution(input, matrix, solutions, evaluator.equations)
     }
 
-    private fun printSolution(solutionVector : DoubleArray, equations : MutableList<Pair<Expr.Equation,Expr.Equation>>) {
+    private fun printSolution(input: String, matrix: Array<DoubleArray>, solutions: DoubleArray, equations : MutableList<Pair<Expr.Equation,Expr.Equation>>) {
         val variableList = getAllVariables(equations).distinct()
-        println("Lösungen für das Gleichungssystem lauten:")
+        println("\nInitial equations:")
+        input.split(",").forEachIndexed{index,element -> println("${index+1}.\t ${element.replace(" ","")}")}
+        println("\nTransformed equations:")
+        for (i in 0 until equations.size){
+            print("${i+1}.\t")
+            for (expression in equations[i].first.exprs){
+                print("$expression ")
+            }
+            print("${Expr.Equals} ")
+            for (expression in equations[i].second.exprs){
+                print("$expression ")
+            }
+            println()
+        }
+        println("\nExtended coefficient matrix:")
+        iterateMatrix(matrix, solutions)
+        val solutionVector = performGaussianElimination(matrix,solutions)
+        println("\nSolved extended coefficient matrix:")
+        iterateMatrix(matrix, solutions)
+
+        println("\nLösungen für das Gleichungssystem lauten:")
         for (i in variableList.indices){
             println("${variableList[i]}: ${String.format("%.2f",solutionVector[i])}")
+        }
+        println()
+    }
+
+    private fun iterateMatrix(matrix: Array<DoubleArray>, solutions: DoubleArray) {
+        for (i in matrix.indices){
+            for (j in 0 until matrix[i].size){
+                print("${String.format("%.2f", matrix[i][j])} \t")
+            }
+            print("| ${String.format("%.2f",solutions[i])}")
+            println()
         }
     }
 
