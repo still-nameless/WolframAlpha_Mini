@@ -54,7 +54,7 @@ class EquationSolver {
 
         println("\nSolution for the system of linear equation are:")
         for (i in variableList.indices){
-            println("${variableList[i]}: ${String.format("%.2f",solutionVector[i])}")
+            println("${variableList[i]} = ${String.format("%.2f",solutionVector[i])}")
         }
         println()
     }
