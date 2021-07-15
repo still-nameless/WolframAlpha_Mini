@@ -13,3 +13,22 @@ fun main(){
 
     EquationSolver().solveEquation(createMassiveSystemOfLinearEquations(15))
 }
+
+fun createMassiveSystemOfLinearEquations(n : Int) : String{
+    val alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    if(n < 1 || n > 52) throw Exception("Unsupported number of variables!")
+
+    var equationString = ""
+    for (i in 0 until n) {
+        for (j in 0 until n) {
+            equationString += "${Random.nextInt(1, 100)}${alphabet[j]}"
+            equationString += if (Random.nextDouble() > 0.5) "+" else "-"
+        }
+        equationString = equationString.substring(0..equationString.length-2)
+        equationString += "= ${Random.nextInt(1, 100)}"
+        equationString += ","
+    }
+    equationString = equationString.substring(0..equationString.length-2)
+    return equationString
+}
