@@ -1,3 +1,4 @@
+import kotlin.random.Random
 
 fun main(){
     val testCases : MutableList<String> = mutableListOf(
@@ -8,5 +9,7 @@ fun main(){
     ,"(((1)*(2 + 2) + 3) / (cos(PI) * 5 * (4)))*a = 1"
     ,"2*v + 2*w + 4*x + 5*y + 6*z = 7,2*v + 2*w + 3*x + 3*y + 2*z = 12,1*v + 2*w + 1*x + 5*y + 8*z = -5,2*v + 4*w + 1*x + 5*y + 8*z = -5,2*v + 2*w + 1*x + 5*y + 8*z = -5")
 
-    testCases.forEach { EquationSolver().solveEquation(it) }
+    //testCases.forEach { EquationSolver().solveEquation(it) }
+
+    EquationSolver().solveEquation(createMassiveSystemOfLinearEquations(15))
 }
