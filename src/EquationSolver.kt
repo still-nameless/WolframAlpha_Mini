@@ -1,7 +1,7 @@
 import java.lang.Exception
 import kotlin.math.abs
 
-class EquationSolver() {
+class EquationSolver {
 
     private val epsilon : Double = 1e-15
 
@@ -18,14 +18,14 @@ class EquationSolver() {
 
         for (i in 0 until n){
             var index = 0
-            for (j in 0 until evaluator.equations[i].first.exprs.size){
-                val element = evaluator.equations[i].first.exprs[j]
+            for (j in 0 until evaluator.equations[i].first.expressions.size){
+                val element = evaluator.equations[i].first.expressions[j]
                 if (element is Expr.Variable)
                     matrix[i][index++] = element.number
                 else
                     continue
             }
-            solutions[i] = (evaluator.equations[i].second.exprs[0] as Expr.Number).number
+            solutions[i] = (evaluator.equations[i].second.expressions[0] as Expr.Number).number
         }
         printSolution(input, matrix, solutions, evaluator.equations)
     }
@@ -37,11 +37,11 @@ class EquationSolver() {
         println("\nTransformed equations:")
         for (i in 0 until equations.size){
             print("${i+1}.\t")
-            for (expression in equations[i].first.exprs){
+            for (expression in equations[i].first.expressions){
                 print("$expression ")
             }
             print("${Expr.Equals} ")
-            for (expression in equations[i].second.exprs){
+            for (expression in equations[i].second.expressions){
                 print("$expression ")
             }
             println()
@@ -52,9 +52,9 @@ class EquationSolver() {
         println("\nSolved extended coefficient matrix:")
         iterateMatrix(matrix, solutions)
 
-        println("\nLösungen für das Gleichungssystem lauten:")
+        println("\nSolution for the system of linear equation are:")
         for (i in variableList.indices){
-            println("${variableList[i]}: ${String.format("%.2f",solutionVector[i])}")
+            println("${variableList[i]} = ${String.format("%.2f",solutionVector[i])}")
         }
         println()
     }
@@ -121,7 +121,7 @@ class EquationSolver() {
     private fun getAllVariables(equations: MutableList<Pair<Expr.Equation, Expr.Equation>>) : MutableList<Char>{
         val variableList : MutableList<Char> = mutableListOf()
         equations.forEach{ it ->
-            it.first.exprs.filterIsInstance<Expr.Variable>().forEach { variableList.add(it.name) }
+            it.first.expressions.filterIsInstance<Expr.Variable>().forEach { variableList.add(it.name) }
         }
         return variableList
     }
